@@ -1,0 +1,6 @@
+trash
+.vscode
+.benchmarks
+*.egg-info
+dist
+__pycache__
