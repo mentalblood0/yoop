@@ -46,7 +46,7 @@ class Playlist:
 						'yt-dlp',
 						'--flat-playlist',
 						'--print', key,
-						'--playlist-items', '1',
+						'--playlist-items', '0',
 						self.link.value
 					),
 					capture_output = True

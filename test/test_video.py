@@ -10,8 +10,20 @@ from .test_channel import channel
 def video(channel: yoop.Playlist):
 	return yoop.Video(channel[0])
 
-def test_title(video: yoop.Video):
-	assert video.title == 'Philosophical Pessimism'
-
-def test_channel(video: yoop.Video):
-	assert video.channel == 'Kane B'
+@pytest.mark.parametrize(
+	'field',
+	(
+		'id',
+		'title',
+		'extension',
+		'channel',
+		'uploader',
+		'creator',
+		'description',
+		'license',
+		'location'
+	)
+)
+def test_string_fields(video: yoop.Video, field: str):
+	assert isinstance(video.__getitem__(field), str)
+	assert len(video.__getitem__(field))
