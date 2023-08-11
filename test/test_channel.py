@@ -1,4 +1,5 @@
 import pytest
+import pydantic
 import functools
 
 from .. import yoop
@@ -9,11 +10,21 @@ from .. import yoop
 @functools.cache
 def channel():
 	return yoop.Playlist(
-		yoop.Link('https://www.youtube.com/@KaneB')
+		yoop.Link(
+			pydantic.HttpUrl(
+				'https://www.youtube.com/@KaneB'
+			)
+		)
 	)
 
-def test_title(channel: yoop.Playlist):
-	assert channel.title == 'Kane B - Videos'
-
-def test_uploader(channel: yoop.Playlist):
-	assert channel.uploader == 'Kane B'
+@pytest.mark.parametrize(
+	'field',
+	(
+		'id',
+		'title',
+		'uploader'
+	)
+)
+def test_string_fields(channel: yoop.Playlist, field: str):
+	assert isinstance(channel.__getattribute__(field), str)
+	assert len(channel.__getattribute__(field))

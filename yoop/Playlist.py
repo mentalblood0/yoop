@@ -1,6 +1,7 @@
 import typing
 import pydantic
 import functools
+import itertools
 import subprocess
 
 from .Link  import Link
@@ -12,45 +13,61 @@ class Playlist:
 
 	link : Link
 
+	fields = (
+		'playlist_id',
+		'playlist_title',
+		'playlist_count',
+		'playlist_uploader'
+	)
+
+	@functools.cached_property
+	def info(self):
+		return dict(
+			zip(
+				Playlist.fields,
+				subprocess.run(
+					args = (
+						'yt-dlp',
+						'--skip-download',
+						'--playlist-items', '1',
+						*itertools.chain(
+							*(
+								('--print', key)
+								for key in Playlist.fields
+							)
+						),
+						self.link.string
+					),
+					capture_output = True
+				).stdout.decode().split('\n')
+			)
+		)
+
 	@typing.overload
 	def __getitem__(self, key: int) -> Link:
 		...
 	@typing.overload
 	def __getitem__(self, key: slice) -> typing.Generator[Link, None, None]:
 		...
-	@typing.overload
-	def __getitem__(self, key: str) -> str:
-		...
 	@pydantic.validate_call(config = {'arbitrary_types_allowed': True})
-	def __getitem__(self, key: slice | int | str):
+	def __getitem__(self, key: slice | int):
 		match key:
 			case slice():
 				return (
-					Link(address)
+					Link(pydantic.HttpUrl(address))
 					for address in subprocess.run(
 						args = (
 							'yt-dlp',
 							'--flat-playlist',
 							'--print', 'url',
 							'--playlist-items', f'{key.start or ""}:{key.stop or ""}:{key.step}',
-							self.link.value
+							self.link.string
 						),
 						capture_output = True
 					).stdout.decode().splitlines()
 				)
 			case int():
 				return next(iter(self[key : key + 1 : 1]))
-			case str():
-				return subprocess.run(
-					args = (
-						'yt-dlp',
-						'--flat-playlist',
-						'--print', key,
-						'--playlist-items', '0',
-						self.link.value
-					),
-					capture_output = True
-				).stdout.decode().rstrip()
 
 	@functools.cached_property
 	def __iter__(self):
@@ -58,16 +75,16 @@ class Playlist:
 
 	@functools.cached_property
 	def id(self):
-		return self['playlist_id']
+		return self.info['playlist_id']
 
 	@functools.cached_property
 	def title(self):
-		return self['playlist_title']
+		return self.info['playlist_title']
 
 	@functools.cached_property
 	def __len__(self):
-		return int(self['playlist_count'])
+		return int(self.info['playlist_count'])
 
 	@functools.cached_property
 	def uploader(self):
-		return self['playlist_uploader']
+		return self.info['playlist_uploader']

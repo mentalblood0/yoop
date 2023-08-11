@@ -49,7 +49,7 @@ class Video:
 			args = (
 				'yt-dlp',
 				'-o', '-',
-				self.link.value
+				self.link.string
 			),
 			capture_output = True
 		).stdout
@@ -69,7 +69,7 @@ class Video:
 								for key in Video.fields
 							)
 						),
-						self.link.value
+						self.link.string
 					),
 					capture_output = True
 				).stdout.decode().split('\n')
