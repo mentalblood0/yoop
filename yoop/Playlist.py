@@ -57,8 +57,16 @@ class Playlist:
 		return self[::1]
 
 	@functools.cached_property
+	def id(self):
+		return self['playlist_id']
+
+	@functools.cached_property
 	def title(self):
 		return self['playlist_title']
+
+	@functools.cached_property
+	def __len__(self):
+		return int(self['playlist_count'])
 
 	@functools.cached_property
 	def uploader(self):
