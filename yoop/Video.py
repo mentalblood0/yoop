@@ -24,6 +24,17 @@ class Video:
 		).stdout.decode().rstrip()
 
 	@functools.cached_property
+	def data(self):
+		return subprocess.run(
+			args = (
+				'yt-dlp',
+				'-o', '-',
+				self.link.value
+			),
+			capture_output = True
+		).stdout
+
+	@functools.cached_property
 	def title(self):
 		return self['title']
 

@@ -52,6 +52,7 @@ class Playlist:
 					capture_output = True
 				).stdout.decode().rstrip()
 
+	@functools.cached_property
 	def __iter__(self):
 		return self[::1]
 
