@@ -1,5 +1,4 @@
 import enum
-import typing
 import pydantic
 import datetime
 import functools
@@ -10,10 +9,10 @@ from .Link import Link
 
 
 
-@pydantic.dataclasses.dataclass(frozen = False, kw_only = False)
+@pydantic.dataclasses.dataclass(frozen = True, kw_only = False)
 class Video:
 
-	link  : typing.Final[Link]
+	link  : Link
 
 	fields = (
 		'age_limit',
