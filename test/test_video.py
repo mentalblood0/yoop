@@ -1,4 +1,5 @@
 import pytest
+import functools
 
 from .. import yoop
 
@@ -7,6 +8,7 @@ from .test_channel import channel
 
 
 @pytest.fixture
+@functools.cache
 def video(channel: yoop.Playlist):
 	return yoop.Video(channel[0])
 
@@ -14,7 +16,6 @@ def video(channel: yoop.Playlist):
 	'field',
 	(
 		'id',
-		'title',
 		'extension',
 		'channel',
 		'uploader',
@@ -25,5 +26,5 @@ def video(channel: yoop.Playlist):
 	)
 )
 def test_string_fields(video: yoop.Video, field: str):
-	assert isinstance(video.__getitem__(field), str)
-	assert len(video.__getitem__(field))
+	assert isinstance(video.__getattribute__(field), str)
+	assert len(video.__getattribute__(field))

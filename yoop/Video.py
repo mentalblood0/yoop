@@ -1,31 +1,50 @@
 import enum
+import typing
 import pydantic
 import datetime
 import functools
+import itertools
 import subprocess
 
 from .Link import Link
 
 
 
-@pydantic.dataclasses.dataclass(frozen = True, kw_only = False)
+@pydantic.dataclasses.dataclass(frozen = False, kw_only = False)
 class Video:
 
-	link : Link
+	link  : typing.Final[Link]
 
-	@pydantic.validate_call
-	def __getitem__(self, key: str):
-		return subprocess.run(
-			args = (
-				'yt-dlp',
-				'--flat-playlist',
-				'--print', key,
-				self.link.value
-			),
-			capture_output = True
-		).stdout.decode().rstrip()
+	fields = (
+		'age_limit',
+		'alt_title',
+		'availability',
+		'average_rating',
+		'channel',
+		'concurrent_view_count',
+		'dislike_count',
+		'duration',
+		'ext',
+		'fulltitle',
+		'id',
+		'is_live',
+		'license',
+		'like_count',
+		'live_status',
+		'location',
+		'modified_timestamp',
+		'release_timestamp',
+		'repost_count',
+		'timestamp',
+		'title',
+		'uploader',
+		'views',
+		'was_live',
+		'creator',
+		'description'
+	)
 
-	@functools.cached_property
+	@property
 	def data(self):
 		return subprocess.run(
 			args = (
@@ -37,8 +56,30 @@ class Video:
 		).stdout
 
 	@functools.cached_property
+	def info(self):
+		return dict(
+			zip(
+				Video.fields,
+				subprocess.run(
+					args = (
+						'yt-dlp',
+						'--skip-download',
+						*itertools.chain(
+							*(
+								('--print', key)
+								for key in Video.fields
+							)
+						),
+						self.link.value
+					),
+					capture_output = True
+				).stdout.decode().split('\n')
+			)
+		)
+
+	@property
 	def id(self):
-		return self['id']
+		return self.info['id']
 
 	@pydantic.dataclasses.dataclass(frozen = True, kw_only = True)
 	class Title:
@@ -46,85 +87,85 @@ class Video:
 		full        : str
 		alternative : str
 
-	@functools.cached_property
+	@property
 	def title(self):
 		return Video.Title(
-			simple      = self['title'],
-			full        = self['fulltitle'],
-			alternative = self['alt_title']
+			simple      = self.info['title'],
+			full        = self.info['fulltitle'],
+			alternative = self.info['alt_title']
 		)
 
-	@functools.cached_property
+	@property
 	def extension(self):
-		return self['ext']
+		return self.info['ext']
 
-	@functools.cached_property
+	@property
 	def channel(self):
-		return self['channel']
+		return self.info['channel']
 
-	@functools.cached_property
+	@property
 	def uploader(self):
-		return self['uploader']
+		return self.info['uploader']
 
-	@functools.cached_property
+	@property
 	def creator(self):
-		return self['creator']
+		return self.info['creator']
 
-	@functools.cached_property
+	@property
 	def description(self):
-		return self['description']
+		return self.info['description']
 
-	@functools.cached_property
+	@property
 	def uploaded(self):
-		return datetime.datetime.fromtimestamp(int(self['timestamp']))
+		return datetime.datetime.fromtimestamp(int(self.info['timestamp']))
 
-	@functools.cached_property
+	@property
 	def released(self):
-		return datetime.datetime.fromtimestamp(int(self['release_timestamp']))
+		return datetime.datetime.fromtimestamp(int(self.info['release_timestamp']))
 
-	@functools.cached_property
+	@property
 	def modified(self):
-		return datetime.datetime.fromtimestamp(int(self['modified_timestamp']))
+		return datetime.datetime.fromtimestamp(int(self.info['modified_timestamp']))
 
-	@functools.cached_property
+	@property
 	def license(self):
-		return self['license']
+		return self.info['license']
 
-	@functools.cached_property
+	@property
 	def location(self):
-		return self['location']
+		return self.info['location']
 
-	@functools.cached_property
+	@property
 	def duration(self):
-		return datetime.timedelta(seconds = int(self['duration']))
+		return datetime.timedelta(seconds = int(self.info['duration']))
 
-	@functools.cached_property
+	@property
 	def viewed(self):
-		return int(self['views'])
+		return int(self.info['views'])
 
-	@functools.cached_property
+	@property
 	def viewing(self):
-		return int(self['concurrent_view_count'])
+		return int(self.info['concurrent_view_count'])
 
-	@functools.cached_property
+	@property
 	def likes(self):
-		return int(self['like_count'])
+		return int(self.info['like_count'])
 
-	@functools.cached_property
+	@property
 	def dislikes(self):
-		return int(self['dislike_count'])
+		return int(self.info['dislike_count'])
 
-	@functools.cached_property
+	@property
 	def reposts(self):
-		return int(self['repost_count'])
+		return int(self.info['repost_count'])
 
-	@functools.cached_property
+	@property
 	def rating(self):
-		return float(self['average_rating'])
+		return float(self.info['average_rating'])
 
-	@functools.cached_property
+	@property
 	def age(self):
-		return int(self['age_limit'])
+		return int(self.info['age_limit'])
 
 	class Liveness(enum.Enum):
 		will  = 'is_upcoming'
@@ -133,17 +174,17 @@ class Video:
 		was   = 'was_live'
 		no    = 'not_live'
 
-	@functools.cached_property
+	@property
 	def liveness(self):
-		return Video.Liveness(self['live_status'])
+		return Video.Liveness(self.info['live_status'])
 
-	@functools.cached_property
+	@property
 	def live(self):
-		return bool(self['is_live'])
+		return self.info['is_live'] == 'True'
 
-	@functools.cached_property
+	@property
 	def lived(self):
-		return bool(self['was_live'])
+		return self.info['was_live'] == 'True'
 
 	class Availability(enum.Enum):
 		private       = 'private'
@@ -153,6 +194,6 @@ class Video:
 		unlisted      = 'unlisted'
 		public        = 'public'
 
-	@functools.cached_property
+	@property
 	def availability(self):
-		return Video.Availability(self['availability'])
+		return Video.Availability(self.info['availability'])

@@ -1,10 +1,12 @@
 import pytest
+import functools
 
 from .. import yoop
 
 
 
 @pytest.fixture
+@functools.cache
 def channel():
 	return yoop.Playlist(
 		yoop.Link('https://www.youtube.com/@KaneB')
