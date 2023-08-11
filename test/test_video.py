@@ -12,6 +12,7 @@ from .test_channel import channel
 def video(channel: yoop.Playlist):
 	return yoop.Video(channel[0])
 
+
 @pytest.mark.parametrize(
 	'field',
 	(
@@ -28,3 +29,8 @@ def video(channel: yoop.Playlist):
 def test_string_fields(video: yoop.Video, field: str):
 	assert isinstance(video.__getattribute__(field), str)
 	assert len(video.__getattribute__(field))
+
+
+@pytest.mark.skip(reason = 'expensive in terms of traffic and time')
+def test_data(video: yoop.Video):
+	assert len(video.data)
