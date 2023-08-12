@@ -10,10 +10,8 @@ from .. import yoop
 @functools.cache
 def channel():
 	return yoop.Playlist(
-		yoop.Link(
-			pydantic.HttpUrl(
-				'https://www.youtube.com/@KaneB'
-			)
+		pydantic.HttpUrl(
+			'https://www.youtube.com/@KaneB'
 		)
 	)
 

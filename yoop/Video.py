@@ -5,14 +5,12 @@ import functools
 import itertools
 import subprocess
 
-from .Link import Link
-
 
 
 @pydantic.dataclasses.dataclass(frozen = True, kw_only = False)
 class Video:
 
-	link  : Link
+	link  : pydantic.HttpUrl
 
 	fields = (
 		'age_limit',
@@ -49,7 +47,7 @@ class Video:
 			args = (
 				'yt-dlp',
 				'-o', '-',
-				self.link.string
+				str(self.link)
 			),
 			capture_output = True
 		).stdout
@@ -69,7 +67,7 @@ class Video:
 								for key in Video.fields
 							)
 						),
-						self.link.string
+						str(self.link)
 					),
 					capture_output = True
 				).stdout.decode().split('\n')

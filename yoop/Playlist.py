@@ -4,14 +4,12 @@ import functools
 import itertools
 import subprocess
 
-from .Link  import Link
-
 
 
 @pydantic.dataclasses.dataclass(frozen = True, kw_only = False)
 class Playlist:
 
-	link : Link
+	link : pydantic.HttpUrl
 
 	fields = (
 		'playlist_id',
@@ -36,7 +34,7 @@ class Playlist:
 								for key in Playlist.fields
 							)
 						),
-						self.link.string
+						str(self.link)
 					),
 					capture_output = True
 				).stdout.decode().split('\n')
@@ -44,24 +42,24 @@ class Playlist:
 		)
 
 	@typing.overload
-	def __getitem__(self, key: int) -> Link:
+	def __getitem__(self, key: int) -> pydantic.HttpUrl:
 		...
 	@typing.overload
-	def __getitem__(self, key: slice) -> typing.Generator[Link, None, None]:
+	def __getitem__(self, key: slice) -> typing.Generator[pydantic.HttpUrl, None, None]:
 		...
 	@pydantic.validate_call(config = {'arbitrary_types_allowed': True})
 	def __getitem__(self, key: slice | int):
 		match key:
 			case slice():
 				return (
-					Link(pydantic.HttpUrl(address))
+					pydantic.HttpUrl(address)
 					for address in subprocess.run(
 						args = (
 							'yt-dlp',
 							'--flat-playlist',
 							'--print', 'url',
 							'--playlist-items', f'{key.start or ""}:{key.stop or ""}:{key.step}',
-							self.link.string
+							str(self.link)
 						),
 						capture_output = True
 					).stdout.decode().splitlines()
