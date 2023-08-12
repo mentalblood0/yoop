@@ -20,8 +20,8 @@ class PartNumber:
 @pydantic.dataclasses.dataclass(frozen = True, kw_only = False)
 class Audio:
 
-	data     : bytes
-	part     : PartNumber | None = None
+	data : bytes
+	part : PartNumber | None = None
 
 	@property
 	def converted(self):

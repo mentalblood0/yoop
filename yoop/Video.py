@@ -12,7 +12,7 @@ from .Audio import Audio
 @pydantic.dataclasses.dataclass(frozen = True, kw_only = False)
 class Video:
 
-	link  : pydantic.HttpUrl
+	link : pydantic.HttpUrl
 
 	fields = (
 		'age_limit',
@@ -60,7 +60,7 @@ class Video:
 			subprocess.run(
 				args = (
 					'yt-dlp',
-					'-f', "'ba'",
+					'-f', "ba",
 					'-o', '-',
 					str(self.link)
 				),
