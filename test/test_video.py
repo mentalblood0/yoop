@@ -34,3 +34,8 @@ def test_string_fields(video: yoop.Video, field: str):
 @pytest.mark.skip(reason = 'expensive in terms of traffic and time')
 def test_data(video: yoop.Video):
 	assert len(video.data)
+
+
+@pytest.mark.skip(reason = 'expensive in terms of traffic and time')
+def test_audio(video: yoop.Video):
+	assert len(video.audio)

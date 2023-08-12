@@ -5,6 +5,8 @@ import functools
 import itertools
 import subprocess
 
+from .Audio import Audio
+
 
 
 @pydantic.dataclasses.dataclass(frozen = True, kw_only = False)
@@ -41,7 +43,7 @@ class Video:
 		'description'
 	)
 
-	@property
+	@functools.cached_property
 	def data(self):
 		return subprocess.run(
 			args = (
@@ -51,6 +53,20 @@ class Video:
 			),
 			capture_output = True
 		).stdout
+
+	@functools.cached_property
+	def audio(self):
+		return Audio(
+			subprocess.run(
+				args = (
+					'yt-dlp',
+					'-f', "'ba'",
+					'-o', '-',
+					str(self.link)
+				),
+				capture_output = True
+			).stdout
+		)
 
 	@functools.cached_property
 	def info(self):
