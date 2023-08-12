@@ -42,7 +42,8 @@ class Audio:
 			).stdout
 		)
 
-	def splitted(self, parts: int):
+	@pydantic.validate_call
+	def splitted(self, parts: pydantic.PositiveInt):
 		return (
 			dataclasses.replace(
 				self,
@@ -85,6 +86,7 @@ class Audio:
 	def __len__(self):
 		return len(self.data)
 
+	@pydantic.validate_call
 	def tagged(self, **update: str):
 
 		data_io = self.io
@@ -95,7 +97,8 @@ class Audio:
 
 		return dataclasses.replace(self, data = data_io.getvalue())
 
-	def covered(self, cover: bytes | None):
+	@pydantic.validate_call
+	def covered(self, cover: bytes):
 
 		stream = self.io
 
