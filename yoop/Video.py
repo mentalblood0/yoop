@@ -1,10 +1,12 @@
 import enum
+import math
 import pydantic
 import datetime
 import functools
 import itertools
 import subprocess
 
+from .Url   import Url
 from .Audio import Audio
 
 
@@ -12,7 +14,7 @@ from .Audio import Audio
 @pydantic.dataclasses.dataclass(frozen = True, kw_only = False)
 class Video:
 
-	link : pydantic.HttpUrl
+	link : Url
 
 	fields = (
 		'age_limit',
@@ -49,20 +51,19 @@ class Video:
 			args = (
 				'yt-dlp',
 				'-o', '-',
-				str(self.link)
+				self.link.value
 			),
 			capture_output = True
 		).stdout
 
-	@functools.cached_property
-	def audio(self):
+	def audio(self, limit: Audio.Bitrate = Audio.Bitrate(math.inf)):
 		return Audio(
 			subprocess.run(
 				args = (
 					'yt-dlp',
-					'-f', "ba",
+					'-f', limit.limit if limit else 'ba',
 					'-o', '-',
-					str(self.link)
+					self.link.value
 				),
 				capture_output = True
 			).stdout
@@ -83,7 +84,7 @@ class Video:
 								for key in Video.fields
 							)
 						),
-						str(self.link)
+						self.link.value
 					),
 					capture_output = True
 				).stdout.decode().split('\n')

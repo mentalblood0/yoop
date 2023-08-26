@@ -1,5 +1,4 @@
 import pytest
-import pydantic
 import functools
 
 from .. import yoop
@@ -10,7 +9,7 @@ from .. import yoop
 @functools.cache
 def channel():
 	return yoop.Playlist(
-		pydantic.HttpUrl(
+		yoop.Url(
 			'https://www.youtube.com/@KaneB'
 		)
 	)

@@ -38,4 +38,8 @@ def test_data(video: yoop.Video):
 
 @pytest.mark.skip(reason = 'expensive in terms of traffic and time')
 def test_audio(video: yoop.Video):
-	assert len(video.audio)
+	assert len(video.audio())
+
+@pytest.mark.skip(reason = 'expensive in terms of traffic and time')
+def test_audio_bitrate_limit(video: yoop.Video):
+	assert len(video.audio(limit = yoop.Audio.Bitrate(90)))

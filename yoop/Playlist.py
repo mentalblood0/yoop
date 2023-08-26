@@ -4,6 +4,7 @@ import functools
 import itertools
 import subprocess
 
+from .Url   import Url
 from .Video import Video
 
 
@@ -11,7 +12,7 @@ from .Video import Video
 @pydantic.dataclasses.dataclass(frozen = True, kw_only = False)
 class Playlist:
 
-	link : pydantic.HttpUrl
+	link : Url
 
 	fields = (
 		'playlist_id',
@@ -36,7 +37,7 @@ class Playlist:
 								for key in Playlist.fields
 							)
 						),
-						str(self.link)
+						self.link.value
 					),
 					capture_output = True
 				).stdout.decode().split('\n')
@@ -49,19 +50,19 @@ class Playlist:
 	@typing.overload
 	def __getitem__(self, key: slice) -> typing.Generator[Video, None, None]:
 		...
-	@pydantic.validate_call(config = {'arbitrary_types_allowed': True})
+	@pydantic.validate_arguments(config = {'arbitrary_types_allowed': True})
 	def __getitem__(self, key: slice | int):
 		match key:
 			case slice():
 				return (
-					Video(pydantic.HttpUrl(address))
+					Video(Url(address))
 					for address in subprocess.run(
 						args = (
 							'yt-dlp',
 							'--flat-playlist',
 							'--print', 'url',
 							'--playlist-items', f'{key.start or ""}:{key.stop or ""}:{key.step}',
-							str(self.link)
+							self.link.value
 						),
 						capture_output = True
 					).stdout.decode().splitlines()
