@@ -1,17 +1,17 @@
 import enum
 import math
-import pydantic
 import datetime
 import functools
 import itertools
 import subprocess
+import dataclasses
 
 from .Url   import Url
 from .Audio import Audio
 
 
 
-@pydantic.dataclasses.dataclass(frozen = True, kw_only = False)
+@dataclasses.dataclass(frozen = True, kw_only = False)
 class Video:
 
 	link : Url
@@ -95,7 +95,7 @@ class Video:
 	def id(self):
 		return self.info['id']
 
-	@pydantic.dataclasses.dataclass(frozen = True, kw_only = True)
+	@dataclasses.dataclass(frozen = True, kw_only = True)
 	class Title:
 		simple      : str
 		full        : str

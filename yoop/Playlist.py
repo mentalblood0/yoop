@@ -1,15 +1,15 @@
 import typing
-import pydantic
 import functools
 import itertools
 import subprocess
+import dataclasses
 
 from .Url   import Url
 from .Video import Video
 
 
 
-@pydantic.dataclasses.dataclass(frozen = True, kw_only = False)
+@dataclasses.dataclass(frozen = True, kw_only = False)
 class Playlist:
 
 	link : Url
@@ -50,7 +50,6 @@ class Playlist:
 	@typing.overload
 	def __getitem__(self, key: slice) -> typing.Generator[Video, None, None]:
 		...
-	@pydantic.validate_arguments(config = {'arbitrary_types_allowed': True})
 	def __getitem__(self, key: slice | int):
 		match key:
 			case slice():

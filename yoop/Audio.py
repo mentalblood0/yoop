@@ -1,6 +1,5 @@
 import io
 import math
-import pydantic
 import functools
 import subprocess
 import dataclasses
@@ -10,14 +9,14 @@ import mutagen.easyid3
 
 
 
-@pydantic.dataclasses.dataclass(frozen = True, kw_only = False)
+@dataclasses.dataclass(frozen = True, kw_only = False)
 class PartNumber:
 
 	current : int
 	total   : int
 
 
-@pydantic.dataclasses.dataclass(frozen = True, kw_only = False)
+@dataclasses.dataclass(frozen = True, kw_only = False)
 class Audio:
 
 	data : bytes
@@ -26,23 +25,18 @@ class Audio:
 	class UnavailableError(Exception):
 		pass
 
-	@pydantic.validator('data')
-	def transformed_data(cls, data: bytes) -> bytes:
-		if not data:
+	def __post_init__(self):
+		if not self.data:
 			raise Audio.UnavailableError from ValueError
-		else:
-			return data
 
-	@pydantic.dataclasses.dataclass(frozen = True, kw_only = False)
+	@dataclasses.dataclass(frozen = True, kw_only = False)
 	class Bitrate:
 
 		kilobits_per_second : int | float
 
-		@pydantic.validator('kilobits_per_second')
-		def transformed_value(cls, kilobits_per_second: int) -> int:
-			if kilobits_per_second <= 0:
+		def __post_init__(self):
+			if self.kilobits_per_second <= 0:
 				raise ValueError
-			return kilobits_per_second
 
 		@property
 		def limit(self):
@@ -71,8 +65,9 @@ class Audio:
 			).stdout
 		)
 
-	@pydantic.validate_arguments
-	def splitted(self, parts: pydantic.PositiveInt):
+	def splitted(self, parts: int):
+		if parts <= 0:
+			raise ValueError
 		return (
 			dataclasses.replace(
 				self,
@@ -115,7 +110,6 @@ class Audio:
 	def __len__(self):
 		return len(self.data)
 
-	@pydantic.validate_arguments
 	def tagged(self, **update: str):
 
 		data_io = self.io
@@ -126,7 +120,6 @@ class Audio:
 
 		return dataclasses.replace(self, data = data_io.getvalue())
 
-	@pydantic.validate_arguments
 	def covered(self, cover: bytes):
 
 		stream = self.io

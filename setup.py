@@ -14,6 +14,6 @@ if __name__ == '__main__':
 		author                        = 'mentalblood',
 		packages                      = setuptools.find_packages(exclude = ['tests*']),
 		install_requires              = [
-			'pydantic'
+			'mutagen'
 		]
 	)
