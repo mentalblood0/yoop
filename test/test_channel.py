@@ -5,8 +5,7 @@ from .. import yoop
 
 
 
-@pytest.fixture
-@functools.cache
+@functools.lru_cache
 def channel():
 	return yoop.Playlist(
 		yoop.Url(
@@ -22,6 +21,6 @@ def channel():
 		'uploader'
 	)
 )
-def test_string_fields(channel: yoop.Playlist, field: str):
+def test_string_fields(field: str):
 	assert isinstance(channel.__getattribute__(field), str)
 	assert len(channel.__getattribute__(field))

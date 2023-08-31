@@ -7,10 +7,9 @@ from .test_channel import channel
 
 
 
-@pytest.fixture
-@functools.cache
-def video(channel: yoop.Playlist):
-	return channel[0]
+@functools.lru_cache
+def video():
+	return channel()[0]
 
 
 @pytest.mark.parametrize(
