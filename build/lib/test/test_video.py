@@ -25,20 +25,20 @@ def video():
 		'location'
 	)
 )
-def test_string_fields(field: str):
-	assert isinstance(video().__getattribute__(field), str)
-	assert len(video().__getattribute__(field))
+def test_string_fields(video: yoop.Video, field: str):
+	assert isinstance(video.__getattribute__(field), str)
+	assert len(video.__getattribute__(field))
 
 
 @pytest.mark.skip(reason = 'expensive in terms of traffic and time')
-def test_data():
-	assert len(video().data)
+def test_data(video: yoop.Video):
+	assert len(video.data)
 
 
 @pytest.mark.skip(reason = 'expensive in terms of traffic and time')
-def test_audio():
-	assert len(video().audio())
+def test_audio(video: yoop.Video):
+	assert len(video.audio())
 
 @pytest.mark.skip(reason = 'expensive in terms of traffic and time')
-def test_audio_bitrate_limit():
-	assert len(video().audio(limit = yoop.Audio.Bitrate(90)))
+def test_audio_bitrate_limit(video: yoop.Video):
+	assert len(video.audio(limit = yoop.Audio.Bitrate(90)))

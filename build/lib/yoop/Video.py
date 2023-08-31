@@ -14,7 +14,7 @@ from .Audio import Audio
 @dataclasses.dataclass(frozen = True, kw_only = False)
 class Video:
 
-	url : Url
+	link : Url
 
 	fields = (
 		'age_limit',
@@ -51,7 +51,7 @@ class Video:
 			args = (
 				'yt-dlp',
 				'-o', '-',
-				self.url.value
+				self.link.value
 			),
 			capture_output = True
 		).stdout
@@ -63,7 +63,7 @@ class Video:
 					'yt-dlp',
 					'-f', limit.limit if limit else 'ba',
 					'-o', '-',
-					self.url.value
+					self.link.value
 				),
 				capture_output = True
 			).stdout
@@ -84,7 +84,7 @@ class Video:
 								for key in Video.fields
 							)
 						),
-						self.url.value
+						self.link.value
 					),
 					capture_output = True
 				).stdout.decode().split('\n')

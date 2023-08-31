@@ -13,6 +13,3 @@ class Url:
 	def __post_init__(self):
 		if not re.match(Url.regex, self.value):
 			raise ValueError
-
-	def __truediv__(self, s: str):
-		return Url(f'{self.value}/{s}')

@@ -12,7 +12,7 @@ from .Video import Video
 @dataclasses.dataclass(frozen = True, kw_only = False)
 class Playlist:
 
-	url : Url
+	link : Url
 
 	fields = (
 		'playlist_id',
@@ -37,7 +37,7 @@ class Playlist:
 								for key in Playlist.fields
 							)
 						),
-						self.url.value
+						self.link.value
 					),
 					capture_output = True
 				).stdout.decode().split('\n')
@@ -54,14 +54,14 @@ class Playlist:
 		match key:
 			case slice():
 				return (
-					Playlist(Url(address)) if '/playlist?' in address else Video(Url(address))
+					Video(Url(address))
 					for address in subprocess.run(
 						args = (
 							'yt-dlp',
 							'--flat-playlist',
 							'--print', 'url',
 							'--playlist-items', f'{key.start or ""}:{key.stop or ""}:{key.step}',
-							self.url.value
+							self.link.value
 						),
 						capture_output = True
 					).stdout.decode().splitlines()
@@ -69,6 +69,7 @@ class Playlist:
 			case int():
 				return next(iter(self[key : key + 1 : 1]))
 
+	@functools.cached_property
 	def __iter__(self):
 		return self[::1]
 
