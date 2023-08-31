@@ -12,7 +12,7 @@ from .Video import Video
 @dataclasses.dataclass(frozen = True, kw_only = False)
 class Playlist:
 
-	link : Url
+	url : Url
 
 	fields = (
 		'playlist_id',
@@ -37,7 +37,7 @@ class Playlist:
 								for key in Playlist.fields
 							)
 						),
-						self.link.value
+						self.url.value
 					),
 					capture_output = True
 				).stdout.decode().split('\n')
@@ -45,23 +45,23 @@ class Playlist:
 		)
 
 	@typing.overload
-	def __getitem__(self, key: int) -> Video:
+	def __getitem__(self, key: int) -> typing.Union['Playlist', Video]:
 		...
 	@typing.overload
-	def __getitem__(self, key: slice) -> typing.Generator[Video, None, None]:
+	def __getitem__(self, key: slice) -> typing.Generator[typing.Union['Playlist', Video], None, None]:
 		...
 	def __getitem__(self, key: slice | int):
 		match key:
 			case slice():
 				return (
-					Video(Url(address))
+					Playlist(Url(address)) if '/playlist?' in address else Video(Url(address))
 					for address in subprocess.run(
 						args = (
 							'yt-dlp',
 							'--flat-playlist',
 							'--print', 'url',
 							'--playlist-items', f'{key.start or ""}:{key.stop or ""}:{key.step}',
-							self.link.value
+							self.url.value
 						),
 						capture_output = True
 					).stdout.decode().splitlines()
@@ -69,7 +69,6 @@ class Playlist:
 			case int():
 				return next(iter(self[key : key + 1 : 1]))
 
-	@functools.cached_property
 	def __iter__(self):
 		return self[::1]
 

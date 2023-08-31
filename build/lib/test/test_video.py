@@ -9,7 +9,11 @@ from .test_channel import channel
 
 @functools.lru_cache
 def video():
-	return channel()[0]
+	match (result := channel()[0]):
+		case yoop.Video():
+			return result
+		case _:
+			raise ValueError
 
 
 @pytest.mark.parametrize(
@@ -25,20 +29,23 @@ def video():
 		'location'
 	)
 )
-def test_string_fields(video: yoop.Video, field: str):
-	assert isinstance(video.__getattribute__(field), str)
-	assert len(video.__getattribute__(field))
+def test_string_fields(field: str):
+	value = getattr(video(), field)
+	assert isinstance(value, str)
+	assert len(value)
 
 
 @pytest.mark.skip(reason = 'expensive in terms of traffic and time')
-def test_data(video: yoop.Video):
-	assert len(video.data)
+def test_data():
+	assert len(video().data)
 
 
 @pytest.mark.skip(reason = 'expensive in terms of traffic and time')
-def test_audio(video: yoop.Video):
-	assert len(video.audio())
+def test_audio():
+	audio = video().audio(yoop.Audio.Bitrate(90))
+	assert len(audio)
+	assert audio.converted.tagged(title = 'lalala').tags['title'] == ['lalala']
 
 @pytest.mark.skip(reason = 'expensive in terms of traffic and time')
-def test_audio_bitrate_limit(video: yoop.Video):
-	assert len(video.audio(limit = yoop.Audio.Bitrate(90)))
+def test_audio_bitrate_limit():
+	assert len(video().audio(limit = yoop.Audio.Bitrate(90)))

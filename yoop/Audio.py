@@ -87,7 +87,7 @@ class Audio:
 					capture_output = True
 				).stdout,
 				part = PartNumber(n + 1, parts)
-			).tagged
+			).tagged(**self.tags)
 			for n in range(parts)
 		)
 
@@ -104,8 +104,11 @@ class Audio:
 		return mutagen.id3.ID3(self.io).getall('APIC')[0].data
 
 	@functools.cached_property
-	def tags(self):
-		return mutagen.easyid3.EasyID3(self.io)
+	def tags(self) -> dict[str, str]:
+		return {
+			i[0]: i[1]
+			for i in mutagen.easyid3.EasyID3(self.io).items()
+		}
 
 	def __len__(self):
 		return len(self.data)

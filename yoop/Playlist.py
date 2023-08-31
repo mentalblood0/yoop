@@ -45,10 +45,10 @@ class Playlist:
 		)
 
 	@typing.overload
-	def __getitem__(self, key: int) -> Video:
+	def __getitem__(self, key: int) -> typing.Union['Playlist', Video]:
 		...
 	@typing.overload
-	def __getitem__(self, key: slice) -> typing.Generator[Video, None, None]:
+	def __getitem__(self, key: slice) -> typing.Generator[typing.Union['Playlist', Video], None, None]:
 		...
 	def __getitem__(self, key: slice | int):
 		match key:
