@@ -125,7 +125,7 @@ class Audio:
 			for n in range(parts)
 		)
 
-	@property
+	@functools.cached_property
 	def title(self) -> str:
 		if self.part is None:
 			return self.tags['title'][0]
