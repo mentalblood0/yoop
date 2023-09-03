@@ -103,7 +103,7 @@ class Audio:
 		if parts <= 0:
 			raise ValueError
 		return (
-		menu	dataclasses.replace(
+			dataclasses.replace(
 				self,
 				data = subprocess.run(
 					args = (
@@ -130,12 +130,7 @@ class Audio:
 		if self.part is None:
 			return self.tags['title'][0]
 		else:
-			return f'{
-				dataclasses.replace(
-					self,
-					part = None
-				).title
-			} - {self.part}'
+			return f'{dataclasses.replace(self, part = None).title} - {self.part}'
 
 	@property
 	def io(self):
