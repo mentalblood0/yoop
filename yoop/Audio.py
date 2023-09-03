@@ -1,5 +1,6 @@
 import io
 import math
+import enum
 import functools
 import subprocess
 import dataclasses
@@ -8,19 +9,10 @@ import mutagen.id3
 import mutagen.easyid3
 
 
-
-@dataclasses.dataclass(frozen = True, kw_only = False)
-class PartNumber:
-
-	current : int
-	total   : int
-
-
 @dataclasses.dataclass(frozen = True, kw_only = False)
 class Audio:
 
 	data : bytes
-	part : PartNumber | None = None
 
 	class UnavailableError(Exception):
 		pass
@@ -46,8 +38,46 @@ class Audio:
 				case _:
 					return f'ba[abr<{self.kilobits_per_second}]'
 
-	@property
-	def converted(self):
+		def __str__(self):
+			return f'{self.kilobits_per_second}k'
+
+	@dataclasses.dataclass(frozen = True, kw_only = False)
+	class Samplerate:
+
+		per_second : int
+
+		def __post_init__(self):
+			if self.per_second <= 0:
+				raise ValueError
+
+		def __str__(self):
+			return str(self.per_second)
+
+	class Format(enum.Enum):
+		AAC  = 'aac'
+		ACT  = 'act'
+		ALAC = 'ALAC'
+		APE  = 'ape'
+		AU   = 'au'
+		AWB  = 'awb'
+		FLAC = 'flac'
+		M4A  = 'm4a'
+		M4B  = 'm4b'
+		MOGA = 'moga'
+		MOGG = 'mog'
+		MP3  = 'mp3'
+		MPC  = 'mpc'
+		OGG  = 'ogg'
+		OPUS = 'opus'
+		RAW  = 'raw'
+		RF64 = 'rf64'
+		WAV  = 'wav'
+
+	class Channels(enum.Enum):
+		one = '1'
+		two = '2'
+
+	def converted(self, bitrate: Bitrate, samplerate: Samplerate, format: Format, channels: Channels):
 		return dataclasses.replace(
 			self,
 			data = subprocess.run(
@@ -56,8 +86,8 @@ class Audio:
 					'-y',
 					'-hide_banner', '-loglevel', 'error',
 					'-i', '-',
-					'-vn', '-ar', '32000', '-ac', '1', '-b:a', '96k',
-					'-f', 'mp3',
+					'-vn', '-ar', str(samplerate), '-ac', channels.value, '-b:a', str(bitrate),
+					'-f', format.value,
 					'-'
 				),
 				input          = self.data,
@@ -85,8 +115,7 @@ class Audio:
 					),
 					input          = self.data,
 					capture_output = True
-				).stdout,
-				part = PartNumber(n + 1, parts)
+				).stdout
 			).tagged(**self.tags)
 			for n in range(parts)
 		)
@@ -113,7 +142,7 @@ class Audio:
 	def __len__(self):
 		return len(self.data)
 
-	def tagged(self, **update: str):
+	def tagged(self, **update: str | list[str]):
 
 		data_io = self.io
 		tags    = mutagen.easyid3.EasyID3(data_io)

@@ -45,7 +45,3 @@ def test_audio():
 	audio = video().audio(yoop.Audio.Bitrate(90))
 	assert len(audio)
 	assert audio.converted.tagged(title = 'lalala').tags['title'] == ['lalala']
-
-@pytest.mark.skip(reason = 'expensive in terms of traffic and time')
-def test_audio_bitrate_limit():
-	assert len(video().audio(limit = yoop.Audio.Bitrate(90)))

@@ -56,6 +56,7 @@ class Video:
 			capture_output = True
 		).stdout
 
+	@functools.lru_cache(3)
 	def audio(self, limit: Audio.Bitrate = Audio.Bitrate(math.inf)):
 		return Audio(
 			subprocess.run(
@@ -95,19 +96,26 @@ class Video:
 	def id(self):
 		return self.info['id']
 
-	@dataclasses.dataclass(frozen = True, kw_only = True)
+	@dataclasses.dataclass(frozen = True, kw_only = False)
 	class Title:
-		simple      : str
-		full        : str
-		alternative : str
+
+		video: 'Video'
+
+		@functools.cached_property
+		def simple(self):
+			return self.video.info['title']
+
+		@functools.cached_property
+		def full(self):
+			return self.video.info['fulltitle']
+
+		@functools.cached_property
+		def alternative(self):
+			return self.video.info['alt_title']
 
 	@property
 	def title(self):
-		return Video.Title(
-			simple      = self.info['title'],
-			full        = self.info['fulltitle'],
-			alternative = self.info['alt_title']
-		)
+		return Video.Title(self)
 
 	@property
 	def extension(self):
