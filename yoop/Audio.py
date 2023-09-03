@@ -13,6 +13,7 @@ import mutagen.easyid3
 class Audio:
 
 	data : bytes
+	part : int | None = None
 
 	class UnavailableError(Exception):
 		pass
@@ -20,6 +21,9 @@ class Audio:
 	def __post_init__(self):
 		if not self.data:
 			raise Audio.UnavailableError from ValueError
+		if self.part is not None:
+			if self.part <= 0:
+				raise ValueError
 
 	@dataclasses.dataclass(frozen = True, kw_only = False)
 	class Bitrate:
@@ -99,7 +103,7 @@ class Audio:
 		if parts <= 0:
 			raise ValueError
 		return (
-			dataclasses.replace(
+		menu	dataclasses.replace(
 				self,
 				data = subprocess.run(
 					args = (
@@ -115,10 +119,23 @@ class Audio:
 					),
 					input          = self.data,
 					capture_output = True
-				).stdout
+				).stdout,
+				part = n + 1
 			).tagged(**self.tags)
 			for n in range(parts)
 		)
+
+	@property
+	def title(self) -> str:
+		if self.part is None:
+			return self.tags['title'][0]
+		else:
+			return f'{
+				dataclasses.replace(
+					self,
+					part = None
+				).title
+			} - {self.part}'
 
 	@property
 	def io(self):

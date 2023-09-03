@@ -3,4 +3,5 @@ trash
 .benchmarks
 *.egg-info
 dist
+build
 __pycache__
