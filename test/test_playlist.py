@@ -25,6 +25,10 @@ def test_string_fields(field: str):
 	assert len(playlists().__getattribute__(field))
 
 
-def test_videos():
+def test_avatar():
+	assert playlists().uploader.avatar.resized(150)
+
+
+def test_iteration():
 	for p in playlists():
 		assert isinstance(p, yoop.Playlist)

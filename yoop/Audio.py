@@ -178,6 +178,7 @@ class Audio:
 				cover
 			)
 		)
+		stream.seek(0)
 		tags.save(stream)
 
 		return dataclasses.replace(self, data = stream.getvalue())

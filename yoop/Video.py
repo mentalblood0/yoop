@@ -219,3 +219,13 @@ class Video:
 	@property
 	def availability(self):
 		return Video.Availability(self.info['availability'])
+
+	@property
+	def available(self):
+		try:
+			return self.availability in (
+				Video.Availability.public,
+				Video.Availability.unlisted
+			)
+		except KeyError:
+			return False
