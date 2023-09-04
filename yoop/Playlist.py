@@ -151,7 +151,7 @@ class Playlist:
 					capture_output = True
 				).stdout
 
-		@property
+		@functools.cached_property
 		def avatar(self):
 			return Playlist.Uploader.Avatar(self)
 

@@ -121,7 +121,11 @@ class Audio:
 					capture_output = True
 				).stdout,
 				part = n + 1
-			).tagged(**self.tags)
+			).tagged(
+				**self.tags
+			).covered(
+				self.cover
+			)
 			for n in range(parts)
 		)
 
