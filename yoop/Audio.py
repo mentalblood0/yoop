@@ -129,13 +129,6 @@ class Audio:
 			for n in range(parts)
 		)
 
-	@functools.cached_property
-	def title(self) -> str:
-		if self.part is None:
-			return self.tags['title'][0]
-		else:
-			return f'{dataclasses.replace(self, part = None).title} - {self.part}'
-
 	@property
 	def io(self):
 		return io.BytesIO(self.data)
