@@ -1,3 +1,4 @@
+import re
 import io
 import math
 import enum
@@ -25,6 +26,22 @@ class Audio:
 			if self.part <= 0:
 				raise ValueError
 
+	@functools.cached_property
+	def info(self):
+		return next(
+			re.finditer(
+				r'Audio: (\w+), (\d+) Hz, (mono|stereo), \w+, (\d+) kb/s',
+				subprocess.run(
+					args = (
+						'ffprobe',
+						'-i', '-'
+					),
+					input          = self.data,
+					capture_output = True
+				).stderr.decode()
+			)
+		).groups()
+
 	@dataclasses.dataclass(frozen = True, kw_only = False)
 	class Bitrate:
 
@@ -45,6 +62,10 @@ class Audio:
 		def __str__(self):
 			return f'{self.kilobits_per_second}k'
 
+	@functools.cached_property
+	def bitrate(self):
+		return Audio.Bitrate(int(self.info[3]))
+
 	@dataclasses.dataclass(frozen = True, kw_only = False)
 	class Samplerate:
 
@@ -56,6 +77,10 @@ class Audio:
 
 		def __str__(self):
 			return str(self.per_second)
+
+	@functools.cached_property
+	def samplerate(self):
+		return Audio.Samplerate(int(self.info[1]))
 
 	class Format(enum.Enum):
 		# AAC  = 'aac'
@@ -77,9 +102,26 @@ class Audio:
 		# RF64 = 'rf64'
 		WAV  = 'wav'
 
+	@functools.cached_property
+	def format(self):
+		return Audio.Format(self.info[0])
+
 	class Channels(enum.Enum):
-		one = '1'
-		two = '2'
+
+		mono   = 'mono'
+		stereo = 'stereo'
+
+		@property
+		def number(self):
+			if self.name == 'mono':
+				return 1
+			elif self.name == 'stereo':
+				return 2
+			raise NotImplementedError
+
+	@functools.cached_property
+	def channels(self):
+		return Audio.Channels(self.info[2])
 
 	def converted(self, bitrate: Bitrate, samplerate: Samplerate, format: Format, channels: Channels):
 		return dataclasses.replace(
@@ -90,7 +132,7 @@ class Audio:
 					'-y',
 					'-hide_banner', '-loglevel', 'error',
 					'-i', '-',
-					'-vn', '-ar', str(samplerate), '-ac', channels.value, '-b:a', str(bitrate),
+					'-vn', '-ar', str(samplerate), '-ac', str(channels.number), '-b:a', str(bitrate),
 					'-f', format.value,
 					'-'
 				),
@@ -100,10 +142,15 @@ class Audio:
 		)
 
 	def splitted(self, parts: int):
+
+		if self.format != Audio.Format.MP3:
+			raise NotImplementedError
+
 		if parts <= 0:
 			raise ValueError
-		return (
-			dataclasses.replace(
+
+		for n in range(parts):
+			result = dataclasses.replace(
 				self,
 				data = subprocess.run(
 					args = (
@@ -113,8 +160,11 @@ class Audio:
 						'-ss', str(math.floor(self.duration / parts * n)),
 						'-i', '-',
 						'-t', str(math.ceil(self.duration / parts)),
-						'-vn', '-ar', '32000', '-ac', '1', '-b:a', '96k',
-						'-f', 'mp3',
+						'-vn',
+						'-ar', str(self.samplerate.per_second),
+						'-ac', str(self.channels.number),
+						'-b:a', f'{self.bitrate.kilobits_per_second}k',
+						'-f', self.format.value,
 						'-'
 					),
 					input          = self.data,
@@ -123,11 +173,11 @@ class Audio:
 				part = n + 1
 			).tagged(
 				**self.tags
-			).covered(
-				self.cover
 			)
-			for n in range(parts)
-		)
+			if self.isCovered:
+				yieldyoop.Audio.Format.MP3 result.covered(self.cover)
+			else:
+				yield result
 
 	@property
 	def io(self):
@@ -136,6 +186,10 @@ class Audio:
 	@functools.cached_property
 	def duration(self):
 		return mutagen.mp3.MP3(self.io).info.length
+
+	@functools.cached_property
+	def isCovered(self) -> bool:
+		return len(mutagen.id3.ID3(self.io).getall('APIC'))
 
 	@functools.cached_property
 	def cover(self) -> bytes:
