@@ -175,7 +175,7 @@ class Audio:
 				**self.tags
 			)
 			if self.isCovered:
-				yieldyoop.Audio.Format.MP3 result.covered(self.cover)
+				yield result.covered(self.cover)
 			else:
 				yield result
 
