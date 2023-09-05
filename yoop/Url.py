@@ -16,3 +16,9 @@ class Url:
 
 	def __truediv__(self, s: str):
 		return Url(f'{self.value}/{s}')
+
+	def __hash__(self):
+		return hash(self.value)
+
+	def __repr__(self):
+		return self.value
