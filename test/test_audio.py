@@ -55,6 +55,7 @@ def test_audio_converted(format: yoop.Audio.Format):
 	assert result.channels   == channels
 
 
+@pytest.mark.skip(reason = 'expensive in terms of traffic and time')
 def test_audio_splitted():
 
 	bitrate    = yoop.Audio.Bitrate(80)
