@@ -59,6 +59,18 @@ class Audio:
 				case _:
 					return f'ba[abr<{self.kilobits_per_second}]'
 
+		def __lt__(self, another: 'Audio.Bitrate'):
+			return self.kilobits_per_second < another.kilobits_per_second
+
+		def __le__(self, another: 'Audio.Bitrate'):
+			return self.kilobits_per_second <= another.kilobits_per_second
+
+		def __gt__(self, another: 'Audio.Bitrate'):
+			return self.kilobits_per_second > another.kilobits_per_second
+
+		def __ge__(self, another: 'Audio.Bitrate'):
+			return self.kilobits_per_second >= another.kilobits_per_second
+
 		def __str__(self):
 			return f'{self.kilobits_per_second}k'
 
