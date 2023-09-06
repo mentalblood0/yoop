@@ -215,6 +215,7 @@ class Video:
 		authenticated = 'needs_auth'
 		unlisted      = 'unlisted'
 		public        = 'public'
+		NA            = 'NA'
 
 	@property
 	def availability(self):
