@@ -76,6 +76,14 @@ class Playlist:
 		return self[::1]
 
 	@functools.cached_property
+	def available(self):
+		try:
+			self.title
+		except KeyError:
+			return False
+		return True
+
+	@functools.cached_property
 	def id(self):
 		return self.info['playlist_id']
 
