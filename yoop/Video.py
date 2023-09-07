@@ -57,7 +57,6 @@ class Video:
 			capture_output = True
 		).stdout
 
-	@functools.lru_cache(3)
 	def audio(self, limit: Audio.Bitrate = Audio.Bitrate(math.inf)):
 		return Audio(
 			subprocess.run(

@@ -9,6 +9,9 @@ import mutagen.mp3
 import mutagen.id3
 import mutagen.easyid3
 
+from .Tags import Tags
+
+
 
 @dataclasses.dataclass(frozen = True, kw_only = False)
 class Audio:
@@ -53,8 +56,9 @@ class Audio:
 					args = (
 						'ffprobe',
 						'-v', 'quiet',
+						'-select_streams', 'a:0',
 						'-show_entries',
-						'format=duration,bit_rate:stream=sample_rate,channels,codec_name',
+						'format=bit_rate:stream=sample_rate,channels,codec_name',
 						'-'
 					),
 					input          = self.data,
@@ -176,9 +180,6 @@ class Audio:
 
 	def splitted(self, parts: int):
 
-		if self.format != Audio.Format.MP3:
-			raise NotImplementedError
-
 		if parts <= 0:
 			raise ValueError
 
@@ -205,10 +206,12 @@ class Audio:
 				).stdout,
 				part = n + 1
 			).tagged(
-				**self.tags
+				artist = self.tags.artist,
+				album  = self.tags.album,
+				title  = self.tags.title
 			)
-			if self.isCovered:
-				yield result.covered(self.cover)
+			if self.tags.cover is not None:
+				yield result.covered(self.tags.cover)
 			else:
 				yield result
 
@@ -218,22 +221,24 @@ class Audio:
 
 	@functools.cached_property
 	def duration(self):
-		return mutagen.mp3.MP3(self.io).info.length
+		hours, minutes, seconds = re.findall(
+			r'time=(\d+):(\d+):(\d+\.\d+)',
+			subprocess.run(
+				args = (
+					'ffmpeg',
+					'-i', '-',
+					'-f', 'null',
+					'-'
+				),
+				input          = self.data,
+				capture_output = True
+			).stderr.decode()
+		)[-1]
+		return (int(hours) * 60 + int(minutes)) * 60 + float(seconds)
 
 	@functools.cached_property
-	def isCovered(self) -> bool:
-		return len(mutagen.id3.ID3(self.io).getall('APIC'))
-
-	@functools.cached_property
-	def cover(self) -> bytes:
-		return mutagen.id3.ID3(self.io).getall('APIC')[0].data
-
-	@functools.cached_property
-	def tags(self) -> dict[str, str]:
-		return {
-			i[0]: i[1]
-			for i in mutagen.easyid3.EasyID3(self.io).items()
-		}
+	def tags(self):
+		return Tags(self.data)
 
 	def __len__(self):
 		return len(self.data)

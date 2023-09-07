@@ -13,19 +13,31 @@ def audio():
 	return video().audio(yoop.Audio.Bitrate(90))
 
 
+def test_duration():
+	assert audio().duration
+
+
 @pytest.mark.skip(reason = 'expensive in terms of traffic and time')
 def test_audio_basic():
-	tags = {
-		'title': ['lalala']
-	}
+
+	artist = 'example_artist'
+	album  = 'example_album'
+	title  = 'example_title'
+
 	result = audio().converted(
 		bitrate    = yoop.Audio.Bitrate(75),
 		samplerate = yoop.Audio.Samplerate(32000),
 		format     = yoop.Audio.Format.MP3,
 		channels   = yoop.Audio.Channels.mono
-	).tagged(**tags)
-	for k, v in tags.items():
-		assert result.tags[k] == v
+	).tagged(
+		artist = artist,
+		album  = album,
+		title  = title
+	)
+
+	assert result.tags.artist == artist
+	assert result.tags.album  == album
+	assert result.tags.title  == title
 
 
 @pytest.mark.skip(reason = 'expensive in terms of traffic and time')
