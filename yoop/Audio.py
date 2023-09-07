@@ -22,16 +22,26 @@ class Audio:
 	def __post_init__(self):
 
 		if not self.data:
-			raise Audio.UnavailableError from ValueError
+			raise Audio.UnavailableError('No audio data provided (empty bytes object)')
 
-		try:
-			self.duration
-		except mutagen.mp3.HeaderNotFoundError as e:
-			raise Audio.UnavailableError from e
+		if (
+			errors := subprocess.run(
+				args = (
+					'ffmpeg',
+					'-v', 'error',
+					'-i', '-'
+					'-f', 'null',
+					'-'
+				),
+				input          = self.data,
+				capture_output = True
+			).stdout.decode()
+		):
+			raise Audio.UnavailableError(f'ffmpeg have errors checking audio data: {errors}')
 
 		if self.part is not None:
 			if self.part <= 0:
-				raise ValueError
+				raise ValueError(f'Part number less then 0 or equal: {self.part}')
 
 	@functools.cached_property
 	def info(self):
