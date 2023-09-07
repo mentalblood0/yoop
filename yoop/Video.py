@@ -143,7 +143,7 @@ class Video:
 		try:
 			return datetime.datetime.fromtimestamp(int(self.info['timestamp']))
 		except ValueError:
-			return datetime.datetime.strptime(self.info['upload_date'], '%Y%M%d')
+			return datetime.datetime.strptime(self.info['upload_date'], '%Y%m%d')
 
 	@property
 	def released(self):
