@@ -39,6 +39,7 @@ class Video:
 		'timestamp',
 		'title',
 		'uploader',
+		'upload_date',
 		'views',
 		'was_live',
 		'creator',
@@ -139,7 +140,10 @@ class Video:
 
 	@property
 	def uploaded(self):
-		return datetime.datetime.fromtimestamp(int(self.info['timestamp']))
+		try:
+			return datetime.datetime.fromtimestamp(int(self.info['timestamp']))
+		except ValueError:
+			return datetime.datetime.strptime(self.info['upload_date'], '%Y%M%d')
 
 	@property
 	def released(self):
