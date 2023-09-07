@@ -20,8 +20,15 @@ class Audio:
 		pass
 
 	def __post_init__(self):
+
 		if not self.data:
 			raise Audio.UnavailableError from ValueError
+
+		try:
+			self.duration
+		except mutagen.mp3.HeaderNotFoundError as e:
+			raise Audio.UnavailableError from e
+
 		if self.part is not None:
 			if self.part <= 0:
 				raise ValueError
