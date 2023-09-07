@@ -45,19 +45,23 @@ class Audio:
 
 	@functools.cached_property
 	def info(self):
-		return next(
-			re.finditer(
-				r'Audio: (\w+), (\d+) Hz, (mono|stereo), \w+, (\d+) kb/s',
+		return {
+			m.groups()[0]: m.groups()[1]
+			for m in re.finditer(
+				r'(\w+)=(.+)',
 				subprocess.run(
 					args = (
 						'ffprobe',
-						'-i', '-'
+						'-v', 'quiet',
+						'-show_entries',
+						'format=duration,bit_rate:stream=sample_rate,channels,codec_name',
+						'-'
 					),
 					input          = self.data,
 					capture_output = True
-				).stderr.decode()
+				).stdout.decode()
 			)
-		).groups()
+		}
 
 	@dataclasses.dataclass(frozen = True, kw_only = False)
 	class Bitrate:
@@ -93,7 +97,7 @@ class Audio:
 
 	@functools.cached_property
 	def bitrate(self):
-		return Audio.Bitrate(int(self.info[3]))
+		return Audio.Bitrate(int(float(self.info['bit_rate']) / 1000))
 
 	@dataclasses.dataclass(frozen = True, kw_only = False)
 	class Samplerate:
@@ -109,36 +113,36 @@ class Audio:
 
 	@functools.cached_property
 	def samplerate(self):
-		return Audio.Samplerate(int(self.info[1]))
+		return Audio.Samplerate(int(self.info['sample_rate']))
 
 	class Format(enum.Enum):
 		# AAC  = 'aac'
 		# ACT  = 'act'
 		# ALAC = 'ALAC'
 		# APE  = 'ape'
-		AU   = 'au'
+		# AU   = 'au'
 		# AWB  = 'awb'
-		FLAC = 'flac'
+		# FLAC = 'flac'
 		# M4A  = 'm4a'
 		# M4B  = 'm4b'
 		# MOGA = 'moga'
 		# MOGG = 'mog'
 		MP3  = 'mp3'
 		# MPC  = 'mpc'
-		OGG  = 'ogg'
+		# OGG  = 'ogg'
 		# OPUS = 'opus'
 		# RAW  = 'raw'
 		# RF64 = 'rf64'
-		WAV  = 'wav'
+		# WAV  = 'wav'
 
 	@functools.cached_property
 	def format(self):
-		return Audio.Format(self.info[0])
+		return Audio.Format(self.info['codec_name'])
 
 	class Channels(enum.Enum):
 
-		mono   = 'mono'
-		stereo = 'stereo'
+		mono   = '1'
+		stereo = '2'
 
 		@property
 		def number(self):
@@ -150,7 +154,7 @@ class Audio:
 
 	@functools.cached_property
 	def channels(self):
-		return Audio.Channels(self.info[2])
+		return Audio.Channels(self.info['channels'])
 
 	def converted(self, bitrate: Bitrate, samplerate: Samplerate, format: Format, channels: Channels):
 		return dataclasses.replace(
