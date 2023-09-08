@@ -32,13 +32,13 @@ class Audio:
 				args = (
 					'ffmpeg',
 					'-v', 'error',
-					'-i', '-'
+					'-i', '-',
 					'-f', 'null',
 					'-'
 				),
 				input          = self.data,
 				capture_output = True
-			).stdout.decode()
+			).stderr.decode()
 		):
 			raise Audio.UnavailableError(f'ffmpeg have errors checking audio data: {errors}')
 
