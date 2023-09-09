@@ -7,5 +7,6 @@ Object-oriented library based on yt-dlp
 Install `ffmpeg`, then
 
 ```bash
+py -m pip install --upgrade git+https://github.com/MentalBlood/pytags
 py -m pip install --upgrade git+https://github.com/MentalBlood/yoop
 ```
