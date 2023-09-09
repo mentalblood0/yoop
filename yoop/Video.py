@@ -1,5 +1,6 @@
 import enum
 import math
+import pytags
 import datetime
 import functools
 import itertools
@@ -59,15 +60,17 @@ class Video:
 
 	def audio(self, limit: Audio.Bitrate = Audio.Bitrate(math.inf)):
 		return Audio(
-			subprocess.run(
-				args = (
-					'yt-dlp',
-					'-f', limit.limit if limit else 'ba',
-					'-o', '-',
-					self.url.value
-				),
-				capture_output = True
-			).stdout
+			pytags.Media(
+				subprocess.run(
+					args = (
+						'yt-dlp',
+						'-f', limit.limit if limit else 'ba',
+						'-o', '-',
+						self.url.value
+					),
+					capture_output = True
+				).stdout
+			)
 		)
 
 	@functools.cached_property

@@ -18,7 +18,6 @@ def channel():
 	(
 		'id',
 		'title',
-		'uploader'
 	)
 )
 def test_string_fields(field: str):

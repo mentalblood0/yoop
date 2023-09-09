@@ -2,6 +2,7 @@ import re
 import io
 import math
 import enum
+import pytags
 import functools
 import subprocess
 import dataclasses
@@ -9,39 +10,15 @@ import mutagen.mp3
 import mutagen.id3
 import mutagen.easyid3
 
-from .Tags import Tags
-
 
 
 @dataclasses.dataclass(frozen = True, kw_only = False)
 class Audio:
 
-	data : bytes
-	part : int | None = None
-
-	class UnavailableError(Exception):
-		pass
+	source : pytags.Media
+	part   : int | None = None
 
 	def __post_init__(self):
-
-		if not self.data:
-			raise Audio.UnavailableError('No audio data provided (empty bytes object)')
-
-		if (
-			errors := subprocess.run(
-				args = (
-					'ffmpeg',
-					'-v', 'error',
-					'-i', '-',
-					'-f', 'null',
-					'-'
-				),
-				input          = self.data,
-				capture_output = True
-			).stderr.decode()
-		):
-			raise Audio.UnavailableError(f'ffmpeg have errors checking audio data: {errors}')
-
 		if self.part is not None:
 			if self.part <= 0:
 				raise ValueError(f'Part number less then 0 or equal: {self.part}')
@@ -61,7 +38,7 @@ class Audio:
 						'format=bit_rate:stream=sample_rate,channels,codec_name',
 						'-'
 					),
-					input          = self.data,
+					input          = self.source.data,
 					capture_output = True
 				).stdout.decode()
 			)
@@ -163,19 +140,21 @@ class Audio:
 	def converted(self, bitrate: Bitrate, samplerate: Samplerate, format: Format, channels: Channels):
 		return dataclasses.replace(
 			self,
-			data = subprocess.run(
-				args = (
-					'ffmpeg',
-					'-y',
-					'-hide_banner', '-loglevel', 'error',
-					'-i', '-',
-					'-vn', '-ar', str(samplerate), '-ac', str(channels.number), '-b:a', str(bitrate),
-					'-f', format.value,
-					'-'
-				),
-				input          = self.data,
-				capture_output = True
-			).stdout
+			source = pytags.Media(
+				data = subprocess.run(
+					args = (
+						'ffmpeg',
+						'-y',
+						'-hide_banner', '-loglevel', 'error',
+						'-i', '-',
+						'-vn', '-ar', str(samplerate), '-ac', str(channels.number), '-b:a', str(bitrate),
+						'-f', format.value,
+						'-'
+					),
+					input          = self.source.data,
+					capture_output = True
+				).stdout
+			)
 		)
 
 	def splitted(self, parts: int):
@@ -186,24 +165,26 @@ class Audio:
 		for n in range(parts):
 			result = dataclasses.replace(
 				self,
-				data = subprocess.run(
-					args = (
-						'ffmpeg',
-						'-y',
-						'-hide_banner', '-loglevel', 'error',
-						'-ss', str(math.floor(self.duration / parts * n)),
-						'-i', '-',
-						'-t', str(math.ceil(self.duration / parts)),
-						'-vn',
-						'-ar', str(self.samplerate.per_second),
-						'-ac', str(self.channels.number),
-						'-b:a', f'{self.bitrate.kilobits_per_second}k',
-						'-f', self.format.value,
-						'-'
-					),
-					input          = self.data,
-					capture_output = True
-				).stdout,
+				source = pytags.Media(
+					data = subprocess.run(
+						args = (
+							'ffmpeg',
+							'-y',
+							'-hide_banner', '-loglevel', 'error',
+							'-ss', str(math.floor(self.tags.duration / parts * n)),
+							'-i', '-',
+							'-t', str(math.ceil(self.tags.duration / parts)),
+							'-vn',
+							'-ar', str(self.samplerate.per_second),
+							'-ac', str(self.channels.number),
+							'-b:a', f'{self.bitrate.kilobits_per_second}k',
+							'-f', self.format.value,
+							'-'
+						),
+						input          = self.source.data,
+						capture_output = True
+					).stdout
+				),
 				part = n + 1
 			).tagged(
 				artist = self.tags.artist,
@@ -217,48 +198,24 @@ class Audio:
 
 	@property
 	def io(self):
-		return io.BytesIO(self.data)
-
-	@functools.cached_property
-	def duration(self):
-		hours, minutes, seconds = re.findall(
-			r'time=(\d+):(\d+):(\d+\.\d+)',
-			subprocess.run(
-				args = (
-					'ffmpeg',
-					'-i', '-',
-					'-f', 'null',
-					'-'
-				),
-				input          = self.data,
-				capture_output = True
-			).stderr.decode()
-		)[-1]
-		return (int(hours) * 60 + int(minutes)) * 60 + float(seconds)
+		return io.BytesIO(self.source.data)
 
 	@functools.cached_property
 	def tags(self):
-		return Tags(self.data)
+		return pytags.Tags(self.source)
+
+	def tagged(self, **update: str):
+		return Audio(self.tags(**update).source)
 
 	def __len__(self):
-		return len(self.data)
-
-	def tagged(self, **update: str | list[str]):
-
-		data_io = self.io
-		tags    = mutagen.easyid3.EasyID3(data_io)
-
-		tags.update(update)
-		tags.save(data_io)
-
-		return dataclasses.replace(self, data = data_io.getvalue())
+		return len(self.source.data)
 
 	def covered(self, cover: bytes):
 
 		stream = self.io
 
-		tags = mutagen.id3.ID3(stream)
-		tags.add(
+		mutags = mutagen.id3.ID3(stream)
+		mutags.add(
 			mutagen.id3.APIC(
 				3,
 				'image/jpeg',
@@ -268,6 +225,11 @@ class Audio:
 			)
 		)
 		stream.seek(0)
-		tags.save(stream)
+		mutags.save(stream)
 
-		return dataclasses.replace(self, data = stream.getvalue())
+		return dataclasses.replace(
+			self,
+			source = pytags.Media(
+				data = stream.getvalue()
+			)
+		)

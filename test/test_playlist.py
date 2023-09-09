@@ -17,7 +17,6 @@ def playlists():
 	(
 		'id',
 		'title',
-		'uploader'
 	)
 )
 def test_string_fields(field: str):

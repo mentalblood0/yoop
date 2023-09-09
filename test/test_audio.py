@@ -1,5 +1,4 @@
 import pytest
-import pathlib
 import functools
 
 from .. import yoop
@@ -10,11 +9,11 @@ from .test_video import video
 
 @functools.lru_cache
 def audio():
-	return video().audio(yoop.Audio.Bitrate(90))
+	return video().audio()
 
 
 def test_duration():
-	assert audio().duration
+	assert audio().tags.duration
 
 
 @pytest.mark.skip(reason = 'expensive in terms of traffic and time')
