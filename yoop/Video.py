@@ -1,238 +1,226 @@
-import enum
-import math
-import pytags
+import dataclasses
 import datetime
+import enum
 import functools
 import itertools
+import math
 import subprocess
-import dataclasses
 
-from .Url   import Url
 from .Audio import Audio
+from .Url import Url
 
 
+@dataclasses.dataclass(frozen=True, kw_only=False)
+class Media:
+    url: Url
 
-@dataclasses.dataclass(frozen = True, kw_only = False)
-class Video:
+    fields = (
+        "age_limit",
+        "alt_title",
+        "availability",
+        "average_rating",
+        "channel",
+        "concurrent_view_count",
+        "dislike_count",
+        "duration",
+        "ext",
+        "fulltitle",
+        "id",
+        "is_live",
+        "license",
+        "like_count",
+        "live_status",
+        "location",
+        "modified_timestamp",
+        "release_timestamp",
+        "repost_count",
+        "timestamp",
+        "title",
+        "uploader",
+        "upload_date",
+        "views",
+        "was_live",
+        "creator",
+        "description",
+    )
 
-	url : Url
+    @functools.cached_property
+    def data(self):
+        return subprocess.run(
+            args=("yt-dlp", "-o", "-", self.url.value), capture_output=True
+        ).stdout
 
-	fields = (
-		'age_limit',
-		'alt_title',
-		'availability',
-		'average_rating',
-		'channel',
-		'concurrent_view_count',
-		'dislike_count',
-		'duration',
-		'ext',
-		'fulltitle',
-		'id',
-		'is_live',
-		'license',
-		'like_count',
-		'live_status',
-		'location',
-		'modified_timestamp',
-		'release_timestamp',
-		'repost_count',
-		'timestamp',
-		'title',
-		'uploader',
-		'upload_date',
-		'views',
-		'was_live',
-		'creator',
-		'description'
-	)
+    def audio(self, max_bitrate: Audio.Bitrate = Audio.Bitrate(math.inf)):
+        return Audio(
+            subprocess.run(
+                args=(
+                    "yt-dlp",
+                    "-f",
+                    max_bitrate.limit,
+                    "-o",
+                    "-",
+                    self.url.value,
+                ),
+                capture_output=True,
+            ).stdout
+        )
 
-	@functools.cached_property
-	def data(self):
-		return subprocess.run(
-			args = (
-				'yt-dlp',
-				'-o', '-',
-				self.url.value
-			),
-			capture_output = True
-		).stdout
+    @functools.cached_property
+    def info(self):
+        return dict(
+            zip(
+                Media.fields,
+                subprocess.run(
+                    args=(
+                        "yt-dlp",
+                        "--skip-download",
+                        *itertools.chain(*(("--print", key) for key in Media.fields)),
+                        self.url.value,
+                    ),
+                    capture_output=True,
+                )
+                .stdout.decode()
+                .split("\n"),
+            )
+        )
 
-	def audio(self, limit: Audio.Bitrate = Audio.Bitrate(math.inf)):
-		return Audio(
-			pytags.Media(
-				subprocess.run(
-					args = (
-						'yt-dlp',
-						'-f', limit.limit if limit else 'ba',
-						'-o', '-',
-						self.url.value
-					),
-					capture_output = True
-				).stdout
-			)
-		)
+    @property
+    def id(self):
+        return self.info["id"]
 
-	@functools.cached_property
-	def info(self):
-		return dict(
-			zip(
-				Video.fields,
-				subprocess.run(
-					args = (
-						'yt-dlp',
-						'--skip-download',
-						*itertools.chain(
-							*(
-								('--print', key)
-								for key in Video.fields
-							)
-						),
-						self.url.value
-					),
-					capture_output = True
-				).stdout.decode().split('\n')
-			)
-		)
+    @dataclasses.dataclass(frozen=True, kw_only=False)
+    class Title:
+        video: "Media"
 
-	@property
-	def id(self):
-		return self.info['id']
+        @functools.cached_property
+        def simple(self):
+            return self.video.info["title"]
 
-	@dataclasses.dataclass(frozen = True, kw_only = False)
-	class Title:
+        @functools.cached_property
+        def full(self):
+            return self.video.info["fulltitle"]
 
-		video: 'Video'
+        @functools.cached_property
+        def alternative(self):
+            return self.video.info["alt_title"]
 
-		@functools.cached_property
-		def simple(self):
-			return self.video.info['title']
+    @property
+    def title(self):
+        return Media.Title(self)
 
-		@functools.cached_property
-		def full(self):
-			return self.video.info['fulltitle']
+    @property
+    def extension(self):
+        return self.info["ext"]
 
-		@functools.cached_property
-		def alternative(self):
-			return self.video.info['alt_title']
+    @property
+    def channel(self):
+        return self.info["channel"]
 
-	@property
-	def title(self):
-		return Video.Title(self)
+    @property
+    def uploader(self):
+        return self.info["uploader"]
 
-	@property
-	def extension(self):
-		return self.info['ext']
+    @property
+    def creator(self):
+        return self.info["creator"]
 
-	@property
-	def channel(self):
-		return self.info['channel']
+    @property
+    def description(self):
+        return self.info["description"]
 
-	@property
-	def uploader(self):
-		return self.info['uploader']
+    @property
+    def uploaded(self):
+        try:
+            return datetime.datetime.fromtimestamp(int(self.info["timestamp"]))
+        except ValueError:
+            return datetime.datetime.strptime(self.info["upload_date"], "%Y%m%d")
 
-	@property
-	def creator(self):
-		return self.info['creator']
+    @property
+    def released(self):
+        return datetime.datetime.fromtimestamp(int(self.info["release_timestamp"]))
 
-	@property
-	def description(self):
-		return self.info['description']
+    @property
+    def modified(self):
+        return datetime.datetime.fromtimestamp(int(self.info["modified_timestamp"]))
 
-	@property
-	def uploaded(self):
-		try:
-			return datetime.datetime.fromtimestamp(int(self.info['timestamp']))
-		except ValueError:
-			return datetime.datetime.strptime(self.info['upload_date'], '%Y%m%d')
+    @property
+    def license(self):
+        return self.info["license"]
 
-	@property
-	def released(self):
-		return datetime.datetime.fromtimestamp(int(self.info['release_timestamp']))
+    @property
+    def location(self):
+        return self.info["location"]
 
-	@property
-	def modified(self):
-		return datetime.datetime.fromtimestamp(int(self.info['modified_timestamp']))
+    @property
+    def duration(self):
+        return datetime.timedelta(seconds=int(self.info["duration"]))
 
-	@property
-	def license(self):
-		return self.info['license']
+    @property
+    def viewed(self):
+        return int(self.info["views"])
 
-	@property
-	def location(self):
-		return self.info['location']
+    @property
+    def viewing(self):
+        return int(self.info["concurrent_view_count"])
 
-	@property
-	def duration(self):
-		return datetime.timedelta(seconds = int(self.info['duration']))
+    @property
+    def likes(self):
+        return int(self.info["like_count"])
 
-	@property
-	def viewed(self):
-		return int(self.info['views'])
+    @property
+    def dislikes(self):
+        return int(self.info["dislike_count"])
 
-	@property
-	def viewing(self):
-		return int(self.info['concurrent_view_count'])
+    @property
+    def reposts(self):
+        return int(self.info["repost_count"])
 
-	@property
-	def likes(self):
-		return int(self.info['like_count'])
+    @property
+    def rating(self):
+        return float(self.info["average_rating"])
 
-	@property
-	def dislikes(self):
-		return int(self.info['dislike_count'])
+    @property
+    def age(self):
+        return int(self.info["age_limit"])
 
-	@property
-	def reposts(self):
-		return int(self.info['repost_count'])
+    class Liveness(enum.Enum):
+        will = "is_upcoming"
+        alive = "is_live"
+        dying = "post_live"
+        was = "was_live"
+        no = "not_live"
 
-	@property
-	def rating(self):
-		return float(self.info['average_rating'])
+    @property
+    def liveness(self):
+        return Media.Liveness(self.info["live_status"])
 
-	@property
-	def age(self):
-		return int(self.info['age_limit'])
+    @property
+    def live(self):
+        return self.info["is_live"] == "True"
 
-	class Liveness(enum.Enum):
-		will  = 'is_upcoming'
-		alive = 'is_live'
-		dying = 'post_live'
-		was   = 'was_live'
-		no    = 'not_live'
+    @property
+    def lived(self):
+        return self.info["was_live"] == "True"
 
-	@property
-	def liveness(self):
-		return Video.Liveness(self.info['live_status'])
+    class Availability(enum.Enum):
+        private = "private"
+        premium = "premium_only"
+        subscriber = "subscriber_only"
+        authenticated = "needs_auth"
+        unlisted = "unlisted"
+        public = "public"
+        NA = "NA"
 
-	@property
-	def live(self):
-		return self.info['is_live'] == 'True'
+    @property
+    def availability(self):
+        return Media.Availability(self.info["availability"])
 
-	@property
-	def lived(self):
-		return self.info['was_live'] == 'True'
-
-	class Availability(enum.Enum):
-		private       = 'private'
-		premium       = 'premium_only'
-		subscriber    = 'subscriber_only'
-		authenticated = 'needs_auth'
-		unlisted      = 'unlisted'
-		public        = 'public'
-		NA            = 'NA'
-
-	@property
-	def availability(self):
-		return Video.Availability(self.info['availability'])
-
-	@property
-	def available(self):
-		try:
-			return self.availability in (
-				Video.Availability.public,
-				Video.Availability.unlisted
-			)
-		except KeyError:
-			return False
+    @property
+    def available(self):
+        try:
+            return self.availability in (
+                Media.Availability.public,
+                Media.Availability.unlisted,
+            )
+        except KeyError:
+            return False
