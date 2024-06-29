@@ -46,22 +46,12 @@ class Media:
 
     @functools.cached_property
     def data(self):
-        return subprocess.run(
-            args=("yt-dlp", "-o", "-", self.url.value), capture_output=True
-        ).stdout
+        return subprocess.run(args=("yt-dlp", "-o", "-", self.url.value), capture_output=True).stdout
 
     def audio(self, max_bitrate: Audio.Bitrate = Audio.Bitrate(math.inf)):
         return Audio(
             subprocess.run(
-                args=(
-                    "yt-dlp",
-                    "-f",
-                    max_bitrate.limit,
-                    "-o",
-                    "-",
-                    self.url.value,
-                ),
-                capture_output=True,
+                args=("yt-dlp", "-f", max_bitrate.nearest, "-o", "-", self.url.value), capture_output=True
             ).stdout
         )
 
@@ -218,9 +208,6 @@ class Media:
     @property
     def available(self):
         try:
-            return self.availability in (
-                Media.Availability.public,
-                Media.Availability.unlisted,
-            )
+            return self.availability in (Media.Availability.public, Media.Availability.unlisted)
         except KeyError:
             return False

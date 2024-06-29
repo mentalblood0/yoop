@@ -15,17 +15,7 @@ def video():
 
 
 @pytest.mark.parametrize(
-    "field",
-    (
-        "id",
-        "extension",
-        "channel",
-        "uploader",
-        "creator",
-        "description",
-        "license",
-        "location",
-    ),
+    "field", ("id", "extension", "channel", "uploader", "creator", "description", "license", "location")
 )
 def test_string_fields(field: str):
     value = getattr(video(), field)

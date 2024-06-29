@@ -22,9 +22,7 @@ def test_audio_converted(format: yoop.Audio.Format):
     samplerate = yoop.Audio.Samplerate(32000)
     channels = yoop.Audio.Channels.mono
 
-    result = audio().converted(
-        bitrate=bitrate, samplerate=samplerate, format=format, channels=channels
-    )
+    result = audio().converted(bitrate=bitrate, samplerate=samplerate, format=format, channels=channels)
 
     assert result.bitrate == bitrate
     assert result.samplerate == samplerate
@@ -39,13 +37,7 @@ def test_audio_splitted():
     channels = yoop.Audio.Channels.mono
     format = yoop.Audio.Format.MP3
 
-    result = (
-        audio()
-        .converted(
-            bitrate=bitrate, samplerate=samplerate, format=format, channels=channels
-        )
-        .splitted(3)
-    )
+    result = audio().converted(bitrate=bitrate, samplerate=samplerate, format=format, channels=channels).splitted(3)
 
     for r in result:
         assert r.bitrate == bitrate

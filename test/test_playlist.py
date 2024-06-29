@@ -11,13 +11,7 @@ def playlists():
     return yoop.Playlist(channel().url / "playlists")
 
 
-@pytest.mark.parametrize(
-    "field",
-    (
-        "id",
-        "title",
-    ),
-)
+@pytest.mark.parametrize("field", ("id", "title"))
 def test_string_fields(field: str):
     assert isinstance(playlists().__getattribute__(field), str)
     assert len(playlists().__getattribute__(field))

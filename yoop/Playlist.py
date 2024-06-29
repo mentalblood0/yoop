@@ -6,21 +6,15 @@ import pathlib
 import subprocess
 import typing
 
-from .Url import Url
 from .Media import Media
+from .Url import Url
 
 
 @dataclasses.dataclass(frozen=True, kw_only=False)
 class Playlist:
     url: Url
 
-    fields = (
-        "playlist_id",
-        "playlist_title",
-        "playlist_count",
-        "playlist_uploader",
-        "playlist_uploader_id",
-    )
+    fields = ("playlist_id", "playlist_title", "playlist_count", "playlist_uploader", "playlist_uploader_id")
 
     @functools.cached_property
     def info(self):
@@ -33,9 +27,7 @@ class Playlist:
                         "--skip-download",
                         "--playlist-items",
                         "1",
-                        *itertools.chain(
-                            *(("--print", key) for key in Playlist.fields)
-                        ),
+                        *itertools.chain(*(("--print", key) for key in Playlist.fields)),
                         self.url.value,
                     ),
                     capture_output=True,
@@ -46,21 +38,19 @@ class Playlist:
         )
 
     @typing.overload
-    def __getitem__(self, key: int) -> typing.Union["Playlist", Media]:
-        ...
+    def __getitem__(self, key: int) -> typing.Union["Playlist", Media]: ...
 
     @typing.overload
-    def __getitem__(
-        self, key: slice
-    ) -> typing.Generator[typing.Union["Playlist", Media], None, None]:
-        ...
+    def __getitem__(self, key: slice) -> typing.Generator[typing.Union["Playlist", Media], None, None]: ...
 
     def __getitem__(self, key: slice | int):
         if isinstance(key, slice):
             return (
-                Playlist(Url(address))
-                if "/playlist?" in address
-                else Media(Url(address))
+                (
+                    Playlist(Url(address))
+                    if (("/playlist?" in address) or ("/streams" in address))
+                    else Media(Url(address))
+                )
                 for address in subprocess.run(
                     args=(
                         "yt-dlp",
@@ -76,13 +66,10 @@ class Playlist:
                 .stdout.decode()
                 .splitlines()
             )
-        return next(
-            iter(
-                self[
-                    key : key + int(math.copysign(1, key)) : int(math.copysign(1, key))
-                ]
-            )
-        )
+        try:
+            return next(iter(self[key : key + int(math.copysign(1, key)) : int(math.copysign(1, key))]))
+        except StopIteration:
+            raise IndexError
 
     def __iter__(self):
         return self[::1]
@@ -135,15 +122,7 @@ class Playlist:
                 temp = pathlib.Path("avatar.jpg")
 
                 subprocess.run(
-                    args=(
-                        "yt-dlp",
-                        self.uploader.url,
-                        "--write-thumbnail",
-                        "--playlist-items",
-                        "0",
-                        "-o",
-                        str(temp),
-                    ),
+                    args=("yt-dlp", self.uploader.url, "--write-thumbnail", "--playlist-items", "0", "-o", str(temp)),
                     capture_output=True,
                 )
 

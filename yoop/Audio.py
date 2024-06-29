@@ -62,10 +62,10 @@ class Audio:
                 raise ValueError
 
         @property
-        def limit(self):
+        def nearest(self):
             if self.kilobits_per_second == math.inf:
                 return "ba"
-            return f"ba[abr<{self.kilobits_per_second}]"
+            return f"ba[abr<{self.kilobits_per_second}]/wa[abr>{self.kilobits_per_second}]"
 
         def __lt__(self, another: "Audio.Bitrate"):
             return self.kilobits_per_second < another.kilobits_per_second
@@ -140,6 +140,9 @@ class Audio:
     @functools.cached_property
     def channels(self):
         return Audio.Channels(self.info["channels"])
+
+    def estimated_converted_size(self, bitrate: Bitrate):
+        return self.duration.total_seconds() * bitrate.kilobits_per_second * 1024 / 8
 
     def converted(self, bitrate: Bitrate, samplerate: Samplerate, format: Format, channels: Channels):
         return Audio(
@@ -220,3 +223,7 @@ class Audio:
 
     def __len__(self):
         return len(self.data)
+
+    @property
+    def megabytes(self):
+        return int(len(self) / 1024 / 1024)
