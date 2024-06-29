@@ -208,6 +208,8 @@ class Media:
     @property
     def available(self):
         try:
-            return self.availability in (Media.Availability.public, Media.Availability.unlisted)
+            return (self.liveness in (Media.Liveness.was, Media.Liveness.no)) and (
+                self.availability in (Media.Availability.public, Media.Availability.unlisted)
+            )
         except KeyError:
             return False
