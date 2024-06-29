@@ -1,4 +1,5 @@
 import dataclasses
+import datetime
 import enum
 import functools
 import io
@@ -10,20 +11,24 @@ import subprocess
 @dataclasses.dataclass(frozen=True, kw_only=False)
 class Audio:
     data: bytes
-    verified: bool = True
+    verify: bool = False
 
     def __post_init__(self):
         if not self.data:
             raise ValueError("No data provided (empty bytes object)")
 
-        if self.verified:
+        if self.verify:
             errors = subprocess.run(
-                args=("ffmpeg", "-v", "error", "-i", "-", "-f", "null", "-"),
-                input=self.data,
-                capture_output=True,
+                args=("ffmpeg", "-v", "error", "-i", "-", "-f", "null", "-"), input=self.data, capture_output=True
             ).stderr.decode()
             if errors:
                 raise ValueError(f"ffmpeg have errors checking data: {errors}")
+
+    @property
+    def verified(self):
+        if self.verify:
+            return self
+        return Audio(data=self.data, verify=True)
 
     @functools.cached_property
     def info(self):
@@ -136,14 +141,7 @@ class Audio:
     def channels(self):
         return Audio.Channels(self.info["channels"])
 
-    def converted(
-        self,
-        bitrate: Bitrate,
-        samplerate: Samplerate,
-        format: Format,
-        channels: Channels,
-        verified: bool = True,
-    ):
+    def converted(self, bitrate: Bitrate, samplerate: Samplerate, format: Format, channels: Channels):
         return Audio(
             data=subprocess.run(
                 args=(
@@ -167,11 +165,10 @@ class Audio:
                 ),
                 input=self.data,
                 capture_output=True,
-            ).stdout,
-            verified=verified,
+            ).stdout
         )
 
-    def splitted(self, parts: int, verified: bool = True):
+    def splitted(self, parts: int):
         if parts <= 0:
             raise ValueError
         return (
@@ -184,11 +181,11 @@ class Audio:
                         "-loglevel",
                         "error",
                         "-ss",
-                        str(math.floor(self.duration / parts * n)),
+                        str(math.floor(self.duration.total_seconds() / parts * n)),
                         "-i",
                         "-",
                         "-t",
-                        str(math.ceil(self.duration / parts)),
+                        str(math.ceil(self.duration.total_seconds() / parts)),
                         "-vn",
                         "-ar",
                         str(self.samplerate.per_second),
@@ -202,8 +199,7 @@ class Audio:
                     ),
                     input=self.data,
                     capture_output=True,
-                ).stdout,
-                verified=verified,
+                ).stdout
             )
             for n in range(parts)
         )
@@ -213,12 +209,10 @@ class Audio:
         hours, minutes, seconds = re.findall(
             r"time=(\d+):(\d+):(\d+\.\d+)",
             subprocess.run(
-                args=("ffmpeg", "-i", "-", "-f", "null", "-"),
-                input=self.data,
-                capture_output=True,
+                args=("ffmpeg", "-i", "-", "-f", "null", "-"), input=self.data, capture_output=True
             ).stderr.decode(),
         )[-1]
-        return (int(hours) * 60 + int(minutes)) * 60 + float(seconds)
+        return datetime.timedelta(seconds=(int(hours) * 60 + int(minutes)) * 60 + float(seconds))
 
     @property
     def io(self):

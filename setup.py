@@ -4,7 +4,7 @@ import pathlib
 import setuptools
 
 if __name__ == "__main__":
-    if os.system("ffmpeg --version"):
+    if os.system("ffmpeg -version"):
         raise LookupError(
             "yoop is ffmpeg interface, so it needs ffmpeg utility in order to work. "
             "You can install it from here: https://ffmpeg.org/"

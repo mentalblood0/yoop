@@ -7,7 +7,7 @@ import subprocess
 import typing
 
 from .Url import Url
-from .Video import Media
+from .Media import Media
 
 
 @dataclasses.dataclass(frozen=True, kw_only=False)
