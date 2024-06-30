@@ -1,8 +1,8 @@
-import pytest
 import functools
 
-from .. import yoop
+import pytest
 
+from .. import yoop
 from .test_channel import channel
 
 

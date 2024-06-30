@@ -71,6 +71,17 @@ class Playlist:
         except StopIteration:
             raise IndexError
 
+    @property
+    def items(self):
+        return [
+            (Playlist(Url(address)) if (("/playlist?" in address) or ("/streams" in address)) else Media(Url(address)))
+            for address in subprocess.run(
+                args=("yt-dlp", "--flat-playlist", "--print", "url", self.url.value), capture_output=True
+            )
+            .stdout.decode()
+            .splitlines()
+        ]
+
     def __iter__(self):
         return self[::1]
 
