@@ -64,8 +64,8 @@ class Audio:
         @property
         def nearest(self):
             if self.kilobits_per_second == math.inf:
-                return "ba"
-            return f"ba[abr<{self.kilobits_per_second}]/wa[abr>{self.kilobits_per_second}]"
+                return ("-f", "ba")
+            return ("-f", f"ba[abr<{self.kilobits_per_second}]/wa[abr>{self.kilobits_per_second}]")
 
         def __lt__(self, another: "Audio.Bitrate"):
             return self.kilobits_per_second < another.kilobits_per_second

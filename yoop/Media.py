@@ -6,6 +6,8 @@ import itertools
 import math
 import subprocess
 
+import requests
+
 from .Audio import Audio
 from .Url import Url
 
@@ -48,12 +50,15 @@ class Media:
     def data(self):
         return subprocess.run(args=("yt-dlp", "-o", "-", self.url.value), capture_output=True).stdout
 
-    def audio(self, max_bitrate: Audio.Bitrate = Audio.Bitrate(math.inf)):
-        return Audio(
-            subprocess.run(
-                args=("yt-dlp", "-f", max_bitrate.nearest, "-o", "-", self.url.value), capture_output=True
-            ).stdout
-        )
+    def audio(self, select: Audio.Bitrate | Audio.Format = Audio.Bitrate(math.inf)):
+        args: list[str] = ["yt-dlp"]
+        if isinstance(select, Audio.Bitrate):
+            args += select.nearest
+        elif isinstance(select, Audio.Format):
+            args += ("-f", select.value)
+        args += ("-o", "-", self.url.value)
+
+        return Audio(subprocess.run(args=args, capture_output=True).stdout)
 
     @functools.cached_property
     def info(self):
@@ -143,7 +148,7 @@ class Media:
 
     @property
     def duration(self):
-        return datetime.timedelta(seconds=int(self.info["duration"]))
+        return datetime.timedelta(seconds=int(float(self.info["duration"])))
 
     @property
     def viewed(self):
@@ -179,6 +184,7 @@ class Media:
         dying = "post_live"
         was = "was_live"
         no = "not_live"
+        NA = "NA"
 
     @property
     def liveness(self):
@@ -208,8 +214,39 @@ class Media:
     @property
     def available(self):
         try:
-            return (self.liveness in (Media.Liveness.was, Media.Liveness.no)) and (
-                self.availability in (Media.Availability.public, Media.Availability.unlisted)
+            return (self.liveness in (Media.Liveness.was, Media.Liveness.no, Media.Liveness.NA)) and (
+                self.availability in (Media.Availability.public, Media.Availability.unlisted, Media.Availability.NA)
             )
         except KeyError:
             return False
+
+    def thumbnail(self, width: int):
+        return subprocess.run(
+            args=(
+                "ffmpeg",
+                "-y",
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-i",
+                "-",
+                "-vf",
+                f"scale={width}:-1",
+                "-f",
+                "apng",
+                "-",
+            ),
+            input=subprocess.run(
+                args=("ffmpeg", "-i", "-", "-f", "apng", "-"),
+                capture_output=True,
+                input=requests.get(
+                    subprocess.run(
+                        args=("yt-dlp", self.url.value, "--skip-download", "--write-info-json", "--print", "thumbnail"),
+                        capture_output=True,
+                    )
+                    .stdout.decode()
+                    .strip()
+                ).content,
+            ).stdout,
+            capture_output=True,
+        ).stdout
