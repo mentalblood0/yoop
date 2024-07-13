@@ -3,8 +3,11 @@ import functools
 import itertools
 import math
 import pathlib
+import re
 import subprocess
 import typing
+
+import requests
 
 from .Media import Media
 from .Url import Url
@@ -39,6 +42,10 @@ class Playlist:
         )
 
     def __getitem__(self, key: slice | int):
+        if ("bandcamp.com" in self.url.value) and (self.content == Playlist):
+            if isinstance(key, slice):
+                return (i for i in self.items[key])
+            return self.items[key]
         if isinstance(key, slice):
             return (
                 self.content(Url(address))
@@ -62,10 +69,15 @@ class Playlist:
         except StopIteration:
             raise IndexError
 
-    @property
+    @functools.cached_property
     def items(self):
+        if ("bandcamp.com" in self.url.value) and (self.content == Playlist):
+            return [
+                self.content(self.url / a)
+                for a in set(re.findall(r"(\/album\/[^&\"]+)(?:&|\")", requests.get(self.url.value).content.decode()))
+            ]
         return [
-            (Playlist(Url(address)) if (("/playlist?" in address) or ("/streams" in address)) else Media(Url(address)))
+            self.content(Url(address))
             for address in subprocess.run(
                 args=("yt-dlp", "--flat-playlist", "--print", "url", self.url.value), capture_output=True
             )
