@@ -52,7 +52,11 @@ class Playlist:
         )
 
     def __getitem__(self, key: slice | int):
-        if ("bandcamp.com" in self.url.value) and ("/track/" not in self.url.value):
+        if (
+            ("bandcamp.com" in self.url.value)
+            and ("/track/" not in self.url.value)
+            and ("/album/" not in self.url.value)
+        ):
             if isinstance(key, slice):
                 return (i for i in self.items[key])
             return self.items[key]
@@ -81,7 +85,11 @@ class Playlist:
 
     @functools.cached_property
     def items(self):
-        if ("bandcamp.com" in self.url.value) and ("/track/" not in self.url.value):
+        if (
+            ("bandcamp.com" in self.url.value)
+            and ("/track/" not in self.url.value)
+            and ("/album/" not in self.url.value)
+        ):
             page = requests.get((self.url / "music").value).content.decode()
             return [
                 self.content(self.url / a)
