@@ -19,7 +19,6 @@ class Playlist:
 
     @staticmethod
     def content(url: Url):
-        print(f"content {url.value}")
         if "bandcamp.com" in url.value:
             if "/track/" in url.value:
                 return Media(url)
