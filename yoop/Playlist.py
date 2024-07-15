@@ -4,7 +4,6 @@ import itertools
 import math
 import re
 import subprocess
-import typing
 
 import requests
 
@@ -20,6 +19,7 @@ class Playlist:
 
     @staticmethod
     def content(url: Url):
+        print(f"content {url.value}")
         if "bandcamp.com" in url.value:
             if "/track/" in url.value:
                 return Media(url)
@@ -77,6 +77,7 @@ class Playlist:
                 )
                 .stdout.decode()
                 .splitlines()
+                if not (("bandcamp.com" in self.url.value) and address.endswith(".mp4"))
             )
         try:
             return next(iter(self[key : key + int(math.copysign(1, key)) : int(math.copysign(1, key))]))
