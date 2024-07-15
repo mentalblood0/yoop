@@ -2,7 +2,6 @@ import dataclasses
 import functools
 import itertools
 import math
-import pathlib
 import re
 import subprocess
 import typing
@@ -16,9 +15,20 @@ from .Url import Url
 @dataclasses.dataclass(frozen=True, kw_only=False)
 class Playlist:
     url: Url
-    content: typing.Type["Playlist"] | typing.Type[Media] = Media
 
     fields = ("playlist_id", "playlist_title", "playlist_count", "playlist_uploader", "playlist_uploader_id")
+
+    @staticmethod
+    def content(url: Url):
+        if "bandcamp.com" in url.value:
+            if "/track/" in url.value:
+                return Media(url)
+            return Playlist(url)
+        elif "youtube.com" in url.value:
+            if "watch?v=" in url.value:
+                return Media(url)
+            return Playlist(url)
+        raise ValueError
 
     @functools.cached_property
     def info(self):
@@ -42,7 +52,7 @@ class Playlist:
         )
 
     def __getitem__(self, key: slice | int):
-        if ("bandcamp.com" in self.url.value) and (self.content == Playlist):
+        if ("bandcamp.com" in self.url.value) and ("/track/" not in self.url.value):
             if isinstance(key, slice):
                 return (i for i in self.items[key])
             return self.items[key]
@@ -71,10 +81,12 @@ class Playlist:
 
     @functools.cached_property
     def items(self):
-        if ("bandcamp.com" in self.url.value) and (self.content == Playlist):
+        if ("bandcamp.com" in self.url.value) and ("/track/" not in self.url.value):
+            page = requests.get((self.url / "music").value).content.decode()
             return [
                 self.content(self.url / a)
-                for a in set(re.findall(r"(\/album\/[^&\"]+)(?:&|\")", requests.get(self.url.value).content.decode()))
+                for a in re.findall(r"\"(\/(?:album|track)\/[^\"]+)\"", page)
+                + re.findall(r";(\/(?:album|track)\/[^&\"]+)(?:&|\")", page)
             ]
         return [
             self.content(Url(address))
