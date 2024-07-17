@@ -1,11 +1,10 @@
+import base64
 import dataclasses
 import functools
 import itertools
 import math
 import re
 import subprocess
-
-import requests
 
 from .Media import Media
 from .Url import Url
@@ -90,7 +89,15 @@ class Playlist:
             and ("/track/" not in self.url.value)
             and ("/album/" not in self.url.value)
         ):
-            page = requests.get((self.url / "music").value).content.decode()
+            page = base64.b64decode(
+                re.findall(
+                    r"Dumping request.*\n(.*)\n",
+                    subprocess.run(
+                        args=("yt-dlp", "--flat-playlist", "--skip-download", "--dump-pages", self.url.value),
+                        capture_output=True,
+                    ).stdout.decode(),
+                )[0]
+            ).decode()
             return [
                 self.content(self.url / a)
                 for a in re.findall(r"\"(\/(?:album|track)\/[^\"]+)\"", page)
