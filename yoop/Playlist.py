@@ -93,7 +93,13 @@ class Playlist:
                 re.findall(
                     r"Dumping request.*\n(.*)\n",
                     subprocess.run(
-                        args=("yt-dlp", "--flat-playlist", "--skip-download", "--dump-pages", self.url.value),
+                        args=(
+                            "yt-dlp",
+                            "--flat-playlist",
+                            "--skip-download",
+                            "--dump-pages",
+                            (self.url / "music").value,
+                        ),
                         capture_output=True,
                     ).stdout.decode(),
                 )[0]
