@@ -111,7 +111,7 @@ class Playlist:
                 + re.findall(r";(\/(?:album|track)\/[^&\"]+)(?:&|\")", page)
             ]
             for a in re.findall(r"page_url&quot;:&quot;([^&]+)&", page):
-                c = self.content(Url(a))
+                c = self.content(Url(a) if "http" in a else self.url / a)
                 if c not in result:
                     result.append(c)
             return result
