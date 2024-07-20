@@ -15,7 +15,7 @@ class Url:
             raise ValueError(self.value)
 
     def __truediv__(self, s: str):
-        return Url(self.value.rstrip("/") + "/" + s)
+        return Url(self.value.rstrip("/") + "/" + s.lstrip("/"))
 
     def __hash__(self):
         return hash(self.value)
