@@ -75,7 +75,7 @@ class Playlist:
                 )
                 .stdout.decode()
                 .splitlines()
-                if not (("bandcamp.com" in self.url.value) and address.endswith(".mp4"))
+                if (not (("bandcamp.com" in self.url.value) and address.endswith(".mp4"))) and (not address == "NA")
             )
         try:
             return next(iter(self[key : key + int(math.copysign(1, key)) : int(math.copysign(1, key))]))
@@ -146,7 +146,10 @@ class Playlist:
 
     @functools.cached_property
     def length(self):
-        return int(self.info["playlist_count"])
+        try:
+            return int(self.info["playlist_count"])
+        except ValueError:
+            return 0
 
     def __len__(self):
         return self.length
