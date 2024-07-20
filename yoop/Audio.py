@@ -53,11 +53,13 @@ class Audio:
             )
         }
 
-    @dataclasses.dataclass(frozen=True, kw_only=False)
+    @dataclasses.dataclass(kw_only=False)
     class Bitrate:
-        kilobits_per_second: int | float
+        kilobits_per_second: int | float | str
 
         def __post_init__(self):
+            if isinstance(self.kilobits_per_second, str):
+                self.kilobits_per_second = int(self.kilobits_per_second)
             if self.kilobits_per_second <= 0:
                 raise ValueError
 
@@ -86,11 +88,13 @@ class Audio:
     def bitrate(self):
         return Audio.Bitrate(int(float(self.info["bit_rate"]) / 1000))
 
-    @dataclasses.dataclass(frozen=True, kw_only=False)
+    @dataclasses.dataclass(kw_only=False)
     class Samplerate:
-        per_second: int
+        per_second: int | str
 
         def __post_init__(self):
+            if isinstance(self.per_second, str):
+                self.per_second = int(self.per_second)
             if self.per_second <= 0:
                 raise ValueError
 
