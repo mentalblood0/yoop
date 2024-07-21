@@ -213,13 +213,16 @@ class Audio:
 
     @functools.cached_property
     def duration(self):
-        hours, minutes, seconds = re.findall(
-            r"time=(\d+):(\d+):(\d+\.\d+)",
-            subprocess.run(
-                args=("ffmpeg", "-i", "-", "-f", "null", "-"), input=self.data, capture_output=True
-            ).stderr.decode(),
-        )[-1]
-        return datetime.timedelta(seconds=(int(hours) * 60 + int(minutes)) * 60 + float(seconds))
+        try:
+            hours, minutes, seconds = re.findall(
+                r"time=(\d+):(\d+):(\d+\.\d+)",
+                subprocess.run(
+                    args=("ffmpeg", "-i", "-", "-f", "null", "-"), input=self.data, capture_output=True
+                ).stderr.decode(),
+            )[-1]
+            return datetime.timedelta(seconds=(int(hours) * 60 + int(minutes)) * 60 + float(seconds))
+        except IndexError:
+            return None
 
     @property
     def io(self):

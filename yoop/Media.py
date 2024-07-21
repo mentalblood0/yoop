@@ -113,6 +113,8 @@ class Media:
 
     @property
     def uploader(self):
+        if "uploader" not in self.info:
+            return "NA"
         return self.info["uploader"]
 
     @property
@@ -213,6 +215,8 @@ class Media:
 
     @property
     def available(self):
+        if "bandcamp.com" in self.url.value:
+            return True
         try:
             return (self.liveness in (Media.Liveness.was, Media.Liveness.no, Media.Liveness.NA)) and (
                 self.availability in (Media.Availability.public, Media.Availability.unlisted, Media.Availability.NA)

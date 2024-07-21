@@ -23,7 +23,7 @@ class Playlist:
                 return Media(url)
             return Playlist(url)
         elif "youtube.com" in url.value:
-            if "watch?v=" in url.value:
+            if ("watch?v=" in url.value) or ("/shorts/" in url.value):
                 return Media(url)
             return Playlist(url)
         raise ValueError
@@ -123,6 +123,7 @@ class Playlist:
             )
             .stdout.decode()
             .splitlines()
+            if address != "NA"
         ]
 
     def __iter__(self):
@@ -130,6 +131,8 @@ class Playlist:
 
     @functools.cached_property
     def available(self):
+        if "bandcamp.com" in self.url.value:
+            return True
         try:
             self.title
         except KeyError:
@@ -145,6 +148,12 @@ class Playlist:
         return self.info["playlist_title"]
 
     @functools.cached_property
+    def uploader(self):
+        if "playlist_uploader" not in self.info:
+            return "NA"
+        return self.info["playlist_uploader"]
+
+    @functools.cached_property
     def length(self):
         try:
             return int(self.info["playlist_count"])
@@ -153,19 +162,3 @@ class Playlist:
 
     def __len__(self):
         return self.length
-
-    @dataclasses.dataclass(frozen=True, kw_only=False)
-    class Uploader:
-        playlist: "Playlist"
-
-        @functools.cached_property
-        def name(self):
-            return self.playlist.info["playlist_uploader"]
-
-        @functools.cached_property
-        def id(self):
-            return self.playlist.info["playlist_uploader_id"]
-
-        @functools.cached_property
-        def url(self):
-            return f"https://www.youtube.com/{self.id}"
