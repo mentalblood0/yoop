@@ -5,6 +5,7 @@ import itertools
 import math
 import re
 import subprocess
+from typing import Generator, Union, overload
 
 from .Media import Media
 from .Url import Url
@@ -48,6 +49,12 @@ class Playlist:
                 .split("\n"),
             )
         )
+
+    @overload
+    def __getitem__(self, key: slice) -> Generator[Union[Media, "Playlist"], None, None]: ...
+
+    @overload
+    def __getitem__(self, key: int) -> Union[Media, "Playlist"]: ...
 
     def __getitem__(self, key: slice | int):
         if (

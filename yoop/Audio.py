@@ -53,14 +53,12 @@ class Audio:
             )
         }
 
-    @dataclasses.dataclass(kw_only=False)
+    @dataclasses.dataclass(frozen=True, kw_only=False)
     class Bitrate:
         kilobits_per_second: int | float | str
 
         def __post_init__(self):
-            if isinstance(self.kilobits_per_second, str):
-                self.kilobits_per_second = int(self.kilobits_per_second)
-            if self.kilobits_per_second <= 0:
+            if self._kilobits_per_second <= 0:
                 raise ValueError
 
         @property
@@ -69,20 +67,24 @@ class Audio:
                 return ("-f", "ba")
             return ("-f", f"ba[abr<{self.kilobits_per_second}]/wa[abr>{self.kilobits_per_second}]")
 
+        @property
+        def _kilobits_per_second(self):
+            return int(self.kilobits_per_second)
+
         def __lt__(self, another: "Audio.Bitrate"):
-            return self.kilobits_per_second < another.kilobits_per_second
+            return self._kilobits_per_second < another._kilobits_per_second
 
         def __le__(self, another: "Audio.Bitrate"):
-            return self.kilobits_per_second <= another.kilobits_per_second
+            return self._kilobits_per_second <= another._kilobits_per_second
 
         def __gt__(self, another: "Audio.Bitrate"):
-            return self.kilobits_per_second > another.kilobits_per_second
+            return self._kilobits_per_second > another._kilobits_per_second
 
         def __ge__(self, another: "Audio.Bitrate"):
-            return self.kilobits_per_second >= another.kilobits_per_second
+            return self._kilobits_per_second >= another._kilobits_per_second
 
         def __str__(self):
-            return f"{self.kilobits_per_second}k"
+            return f"{self._kilobits_per_second}k"
 
     @functools.cached_property
     def bitrate(self):
@@ -152,7 +154,7 @@ class Audio:
         return Audio.Channels(self.info["channels"])
 
     def estimated_converted_size(self, bitrate: Bitrate):
-        return self.duration.total_seconds() * bitrate.kilobits_per_second * 1024 / 8
+        return self.duration.total_seconds() * bitrate._kilobits_per_second * 1024 / 8
 
     def converted(self, bitrate: Bitrate, samplerate: Samplerate, format: Format, channels: Channels):
         return Audio(
@@ -219,16 +221,13 @@ class Audio:
 
     @functools.cached_property
     def duration(self):
-        try:
-            hours, minutes, seconds = re.findall(
-                r"time=(\d+):(\d+):(\d+\.\d+)",
-                subprocess.run(
-                    args=("ffmpeg", "-i", "-", "-f", "null", "-"), input=self.data, capture_output=True
-                ).stderr.decode(),
-            )[-1]
-            return datetime.timedelta(seconds=(int(hours) * 60 + int(minutes)) * 60 + float(seconds))
-        except IndexError:
-            return None
+        hours, minutes, seconds = re.findall(
+            r"time=(\d+):(\d+):(\d+\.\d+)",
+            subprocess.run(
+                args=("ffmpeg", "-i", "-", "-f", "null", "-"), input=self.data, capture_output=True
+            ).stderr.decode(),
+        )[-1]
+        return datetime.timedelta(seconds=(int(hours) * 60 + int(minutes)) * 60 + float(seconds))
 
     @property
     def io(self):
