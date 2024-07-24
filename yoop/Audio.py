@@ -69,6 +69,8 @@ class Audio:
 
         @property
         def _kilobits_per_second(self):
+            if isinstance(self.kilobits_per_second, float) and (self.kilobits_per_second == math.inf):
+                return self.kilobits_per_second
             return int(self.kilobits_per_second)
 
         def __lt__(self, another: "Audio.Bitrate"):
