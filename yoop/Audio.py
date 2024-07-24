@@ -125,6 +125,9 @@ class Audio:
         # RF64 = 'rf64'
         # WAV  = 'wav'
 
+        def __str__(self):
+            return self.value
+
     @functools.cached_property
     def format(self):
         return Audio.Format(self.info["codec_name"])
@@ -140,6 +143,9 @@ class Audio:
             elif self.name == "stereo":
                 return 2
             raise NotImplementedError
+
+        def __str__(self):
+            return self.value
 
     @functools.cached_property
     def channels(self):
