@@ -7,6 +7,5 @@ Object-oriented interface to yt-dlp
 Install `ffmpeg`, then
 
 ```bash
-py -m pip install --upgrade git+https://github.com/MentalBlood/yoop
+py -m pip install --upgrade git+https://codeber.org/mentalblood/yoop
 ```
-

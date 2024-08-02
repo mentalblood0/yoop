@@ -3,7 +3,6 @@ import datetime
 import enum
 import functools
 import itertools
-import math
 import subprocess
 
 import requests
@@ -50,7 +49,7 @@ class Media:
     def data(self):
         return subprocess.run(args=("yt-dlp", "-o", "-", self.url.value), capture_output=True).stdout
 
-    def audio(self, select: Audio.Bitrate | Audio.Format = Audio.Bitrate(math.inf)):
+    def audio(self, select: Audio.Bitrate | Audio.Format = Audio.Bitrate(320)):
         args: list[str] = ["yt-dlp"]
         if isinstance(select, Audio.Bitrate):
             args += select.nearest
