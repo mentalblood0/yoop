@@ -113,7 +113,7 @@ class Playlist:
             ).decode()
             result = [
                 self.content(self.url / a) if "http" not in a else self.content(Url(a))
-                for a in re.findall(r'href="([^&]+)&amp;tab=music', page)
+                for a in re.findall(r'href="([^&\n]+)&amp;tab=music', page)
                 + re.findall(r"\"(\/(?:album|track)\/[^\"]+)\"", page)
                 + re.findall(r";(\/(?:album|track)\/[^&\"]+)(?:&|\")", page)
             ]

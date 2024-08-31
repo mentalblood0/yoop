@@ -249,6 +249,7 @@ class Media:
                     )
                     .stdout.decode()
                     .strip()
+                    .replace("https", "http")
                 ).content,
             ).stdout,
             capture_output=True,
